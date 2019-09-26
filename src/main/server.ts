@@ -1,11 +1,10 @@
-import * as electron from 'electron'
 import { EventEmitter } from 'events'
 import { isBuffer, bufferToMeta, metaToBuffer } from '../common/buffer-utils'
 import objectsRegistry from './objects-registry'
 import * as errorUtils from '../common/error-utils'
 import { isPromise } from '../common/is-promise'
 import { ObjectMember, MetaType, ObjProtoDescriptor, MetaTypeFromRenderer } from '../common/types'
-const { ipcMain } = electron
+import { ipcMain, WebContents, app, IpcMainEvent } from 'electron'
 
 const v8Util = process.electronBinding('v8_util')
 const eventBinding = process.electronBinding('event')
@@ -58,7 +57,7 @@ const getObjectPrototype = function (object: any): ObjProtoDescriptor {
 
 
 // Convert a real value into meta data.
-const valueToMeta = function (sender: electron.WebContents, contextId: string, value: any, optimizeSimpleObject = false): MetaType {
+const valueToMeta = function (sender: WebContents, contextId: string, value: any, optimizeSimpleObject = false): MetaType {
   // Determine the type of value.
   let type: MetaType['type']
   switch (typeof value) {
@@ -190,7 +189,7 @@ const removeRemoteListenersAndLogWarning = (sender: any, callIntoRenderer: (...a
 }
 
 // Convert array of meta data from renderer into array of real values.
-const unwrapArgs = function (sender: electron.WebContents, frameId: number, contextId: string, args: any[]) {
+const unwrapArgs = function (sender: WebContents, frameId: number, contextId: string, args: any[]) {
   const metaToValue = function (meta: MetaTypeFromRenderer): any {
     switch (meta.type) {
       case 'value':
@@ -254,7 +253,7 @@ const unwrapArgs = function (sender: electron.WebContents, frameId: number, cont
   return args.map(metaToValue)
 }
 
-const handleRemoteCommand = function (channel: string, handler: (event: electron.IpcMainEvent, contextId: string, ...args: any[]) => MetaType | null | void) {
+const handleRemoteCommand = function (channel: string, handler: (event: IpcMainEvent, contextId: string, ...args: any[]) => MetaType | null | void) {
   ipcMain.on(channel, (event, contextId: string, ...args: any[]) => {
     let returnValue: MetaType | null | void
 
@@ -270,10 +269,10 @@ const handleRemoteCommand = function (channel: string, handler: (event: electron
   })
 }
 
-const emitCustomEvent = function (contents: electron.WebContents, eventName: string, ...args: any[]) {
+const emitCustomEvent = function (contents: WebContents, eventName: string, ...args: any[]) {
   const event = eventBinding.createWithSender(contents)
 
-  electron.app.emit(eventName, event, contents, ...args)
+  app.emit(eventName, event, contents, ...args)
   contents.emit(eventName, event, ...args)
 
   return event
@@ -314,7 +313,7 @@ export function initialize() {
       if (customEvent.defaultPrevented) {
         throw new Error(`Blocked remote.getBuiltin('${moduleName}')`)
       } else {
-        customEvent.returnValue = (electron as any)[moduleName]
+        customEvent.returnValue = (require('electron') as any)[moduleName]
       }
     }
 
