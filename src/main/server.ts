@@ -9,7 +9,7 @@ import { ipcMain, WebContents, app, IpcMainEvent } from 'electron'
 const v8Util = process.electronBinding('v8_util')
 const eventBinding = process.electronBinding('event')
 
-const hasProp = {}.hasOwnProperty
+const { hasOwnProperty } = Object
 
 // The internal properties of Function.
 const FUNCTION_PROPERTIES = [
@@ -55,7 +55,6 @@ const getObjectPrototype = function (object: any): ObjProtoDescriptor {
   }
 }
 
-
 // Convert a real value into meta data.
 const valueToMeta = function (sender: WebContents, contextId: string, value: any, optimizeSimpleObject = false): MetaType {
   // Determine the type of value.
@@ -75,7 +74,7 @@ const valueToMeta = function (sender: WebContents, contextId: string, value: any
         type = 'date'
       } else if (isPromise(value)) {
         type = 'promise'
-      } else if (hasProp.call(value, 'callee') && value.length != null) {
+      } else if (hasOwnProperty.call(value, 'callee') && value.length != null) {
         // Treat the arguments object as array.
         type = 'array'
       } else if (optimizeSimpleObject && v8Util.getHiddenValue(value, 'simple')) {
