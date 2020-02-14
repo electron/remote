@@ -1,3 +1,5 @@
+import { WebContents, Event } from "electron";
+
 declare namespace NodeJS {
   interface V8UtilBinding {
     getHiddenValue<T>(obj: any, key: string): T;
@@ -10,8 +12,12 @@ declare namespace NodeJS {
     setRemoteObjectFreer(object: any, contextId: string, id: number): void
   }
 
+  interface EventBinding {
+    createWithSender(contents: WebContents): Event
+  }
+
   interface Process {
-    electronBinding(name: 'event'): any;
+    electronBinding(name: 'event'): EventBinding;
     electronBinding(name: 'v8_util'): V8UtilBinding;
   }
 }
