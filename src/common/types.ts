@@ -1,6 +1,3 @@
-import { BufferMeta } from "./buffer-utils"
-import { SerializedError } from "./error-utils"
-
 export type ObjectMember = {
   name: string,
   value?: any,
@@ -25,19 +22,17 @@ export type MetaType = {
   value: any,
 } | {
   type: 'buffer',
-  value: BufferMeta,
+  value: Uint8Array,
 } | {
   type: 'array',
   members: MetaType[]
 } | {
   type: 'error',
+  value: Error,
   members: ObjectMember[]
 } | {
   type: 'exception',
-  value: SerializedError,
-} | {
-  type: 'date',
-  value: number
+  value: MetaType,
 } | {
   type: 'promise',
   then: MetaType
@@ -55,7 +50,7 @@ export type MetaTypeFromRenderer = {
   value: MetaTypeFromRenderer[]
 } | {
   type: 'buffer',
-  value: BufferMeta
+  value: Buffer
 } | {
   type: 'date',
   value: number

@@ -1,4 +1,4 @@
-import { WebContents, Event } from "electron";
+//import { WebContents, Event } from "electron";
 
 declare namespace NodeJS {
   interface V8UtilBinding {
@@ -13,7 +13,7 @@ declare namespace NodeJS {
   }
 
   interface EventBinding {
-    createWithSender(contents: WebContents): Event
+    createWithSender(contents: Electron.WebContents): Electron.Event & { returnValue: any }
   }
 
   interface Process {

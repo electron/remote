@@ -3,9 +3,7 @@ import { BrowserWindow, WebContents, ipcRenderer } from "electron"
 const v8Util = process.electronBinding('v8_util')
 
 import { CallbacksRegistry } from './callbacks-registry'
-import * as bufferUtils from '../common/buffer-utils'
-import * as errorUtils from '../common/error-utils'
-import { isPromise } from '../common/is-promise'
+import { isPromise, isSerializableObject } from '../common/is-promise'
 import { MetaTypeFromRenderer, MetaType, ObjectMember, ObjProtoDescriptor } from "../common/types"
 
 const callbacksRegistry = new CallbacksRegistry()
@@ -42,17 +40,17 @@ function wrapArgs (args: any[], visited = new Set()): any {
       }
       visited.delete(value)
       return meta
-    } else if (bufferUtils.isBuffer(value)) {
+    } else if (value instanceof Buffer) {
       return {
         type: 'buffer',
-        value: bufferUtils.bufferToMeta(value)
+        value
       }
-    } else if (value instanceof Date) {
+    } else if (isSerializableObject(value)) {
       return {
-        type: 'date',
-        value: value.getTime()
+        type: 'value',
+        value
       }
-    } else if ((value != null) && typeof value === 'object') {
+    } else if (typeof value === 'object') {
       if (isPromise(value)) {
         return {
           type: 'promise',
@@ -96,7 +94,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
     } else {
       return {
         type: 'value',
-        value: value
+        value
       }
     }
   }
@@ -213,18 +211,19 @@ function proxyFunctionProperties (remoteMemberFunction: Function, metaId: number
 function metaToValue (meta: MetaType): any {
   if (meta.type === 'value') {
     return meta.value
-  } else if (meta.type == 'array') {
-    return meta.members.map((member) => metaToValue(member))
+  } else if (meta.type === 'array') {
+    return meta.members.map(member => metaToValue(member))
   } else if (meta.type === 'buffer') {
-    return bufferUtils.metaToBuffer(meta.value)
+    return Buffer.from(meta.value.buffer, meta.value.byteOffset, meta.value.byteLength)
   } else if (meta.type === 'promise') {
     return Promise.resolve({ then: metaToValue(meta.then) })
   } else if (meta.type === 'error') {
-    return metaToPlainObject(meta)
-  } else if (meta.type === 'date') {
-    return new Date(meta.value)
+    return metaToError(meta)
   } else if (meta.type === 'exception') {
-    throw errorUtils.deserialize(meta.value)
+    if (meta.value.type === 'error')
+      throw metaToError(meta.value)
+    else
+      throw new Error(`Unexpected value type in exception: ${meta.value.type}`)
   } else {
     let ret
     if ('id' in meta && remoteObjectCache.has(meta.id)) {
@@ -262,12 +261,10 @@ function metaToValue (meta: MetaType): any {
   }
 }
 
-// Construct a plain object from the meta.
-function metaToPlainObject (meta: { type: 'error', members: ObjectMember[] }) {
-  const obj = new Error()
-  for (let i = 0; i < meta.members.length; i++) {
-    const { name, value } = meta.members[i];
-    (obj as any)[name] = value
+function metaToError (meta: { type: 'error', value: any, members: ObjectMember[] }) {
+  const obj = meta.value
+  for (const { name, value } of meta.members) {
+    obj[name] = metaToValue(value)
   }
   return obj
 }
