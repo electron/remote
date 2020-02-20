@@ -67,18 +67,14 @@ function makeWindow () {
 function makeEachWindow () {
   let w: BrowserWindow
   beforeEach(async () => {
-    console.log(1)
     w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, enableRemoteModule: false } })
-    console.log(2)
     await w.loadURL('about:blank')
-    console.log(3)
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
       chai_1.use(require('chai-as-promised'))
       chai_1.use(require('dirty-chai'))
       null
     }`)
-    console.log(4)
   })
   afterEach(closeAllWindows)
   return () => w
