@@ -25,7 +25,7 @@
   },
   "scripts": {
     "prepublishOnly": "tsc",
-    "test": "electron test --extension=ts --require=ts-node/register --exit"
+    "test": "electron test --extension=ts --require=ts-node/register --exit --js-flags=--expose_gc"
   },
   "files": [
     "README.md",
