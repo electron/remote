@@ -1,1 +1,1 @@
-module.exports = require('../dist/renderer')
+module.exports = require('../dist/src/renderer')

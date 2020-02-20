@@ -228,6 +228,7 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
 
 const handleRemoteCommand = function (channel: string, handler: (event: IpcMainEvent, contextId: string, ...args: any[]) => MetaType | null | void) {
   ipcMain.on(channel, (event, contextId: string, ...args: any[]) => {
+    console.log(channel)
     let returnValue: MetaType | null | void
 
     try {
