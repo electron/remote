@@ -9,6 +9,8 @@ steps-test: &steps-test
     - checkout
     - *step-restore-cache
     - run: yarn
+    - store_test_results:
+        path: test-results
     - save_cache:
         paths:
           - node_modules
