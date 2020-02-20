@@ -20,12 +20,12 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: circleci/node:10
+      - image: circleci/node:10-browsers
     <<: *steps-test
 
   release:
     docker:
-      - image: circleci/node:10.15
+      - image: circleci/node:10.15-browsers
     steps:
       - checkout
       - *step-restore-cache
