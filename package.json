@@ -20,12 +20,15 @@
     "dirty-chai": "^2.0.1",
     "electron": "^8.0.0",
     "mocha": "^7.0.1",
+    "mocha-junit-reporter": "^1.23.3",
+    "mocha-multi-reporters": "^1.1.7",
     "ts-node": "^8.6.2",
     "typescript": "^3.6.3"
   },
   "scripts": {
     "prepublishOnly": "tsc",
-    "test": "electron test --extension=ts --require=ts-node/register --exit --js-flags=--expose_gc"
+    "test": "electron test --extension=ts --require=ts-node/register --exit --js-flags=--expose_gc",
+    "test:ci": "yarn test --reporter=mocha-multi-reporters --reporter-options=configFile=.circleci/mocha-reporter-config.json"
   },
   "files": [
     "README.md",

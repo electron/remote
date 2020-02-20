@@ -14,18 +14,20 @@ steps-test: &steps-test
           - node_modules
         key: v1-dependencies-{{ arch }}-{{ checksum "yarn.lock" }}
     - run: yarn tsc
-    - run: yarn test
+    - run: yarn test:ci
+    - store_test_results:
+        path: test-results
 
 version: 2.1
 jobs:
   test:
     docker:
-      - image: circleci/node:10
+      - image: circleci/node:10-browsers
     <<: *steps-test
 
   release:
     docker:
-      - image: circleci/node:10.15
+      - image: circleci/node:10.15-browsers
     steps:
       - checkout
       - *step-restore-cache
