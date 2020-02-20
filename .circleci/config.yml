@@ -9,14 +9,14 @@ steps-test: &steps-test
     - checkout
     - *step-restore-cache
     - run: yarn
-    - store_test_results:
-        path: test-results
     - save_cache:
         paths:
           - node_modules
         key: v1-dependencies-{{ arch }}-{{ checksum "yarn.lock" }}
     - run: yarn tsc
     - run: yarn test
+    - store_test_results:
+        path: test-results
 
 version: 2.1
 jobs:
