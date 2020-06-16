@@ -1,22 +1,55 @@
 import { EventEmitter } from 'events'
 import objectsRegistry from './objects-registry'
-import { isPromise, isSerializableObject } from '../common/is-promise'
-import { ObjectMember, MetaType, ObjProtoDescriptor, MetaTypeFromRenderer } from '../common/types'
-import { ipcMain, WebContents, app, IpcMainEvent } from 'electron'
+import { isPromise, isSerializableObject, deserialize, serialize } from '../common/type-utils'
+import type { MetaTypeFromRenderer, ObjectMember, MetaType, ObjProtoDescriptor } from '../common/types'
+import { ipcMain, WebContents, IpcMainEvent, app } from 'electron'
 
 const v8Util = process.electronBinding('v8_util')
 const eventBinding = process.electronBinding('event')
-
-const { hasOwnProperty } = Object
+const { NativeImage } = process.electronBinding('native_image')
 
 // The internal properties of Function.
 const FUNCTION_PROPERTIES = [
   'length', 'name', 'arguments', 'caller', 'prototype'
 ]
 
+type RendererFunctionId = [string, number] // [contextId, funcId]
+type FinalizerInfo = { id: RendererFunctionId, webContents: WebContents, frameId: number }
+type WeakRef<T> = { deref(): T | undefined }
+type CallIntoRenderer = (...args: any[]) => void
+
 // The remote functions in renderer processes.
-// id => Function
-const rendererFunctions = v8Util.createDoubleIDWeakMap()
+const rendererFunctionCache = new Map<string, WeakRef<CallIntoRenderer>>()
+// eslint-disable-next-line no-undef
+const finalizationRegistry = new (globalThis as any).FinalizationRegistry((fi: FinalizerInfo) => {
+  const mapKey = fi.id[0] + '~' + fi.id[1]
+  const ref = rendererFunctionCache.get(mapKey)
+  if (ref !== undefined && ref.deref() === undefined) {
+    rendererFunctionCache.delete(mapKey)
+    if (!fi.webContents.isDestroyed()) { fi.webContents.sendToFrame(fi.frameId, 'ELECTRON_RENDERER_RELEASE_CALLBACK', fi.id[0], fi.id[1]); }
+  }
+})
+
+function getCachedRendererFunction (id: RendererFunctionId): CallIntoRenderer | undefined {
+  const mapKey = id[0] + '~' + id[1]
+  const ref = rendererFunctionCache.get(mapKey)
+  if (ref !== undefined) {
+    const deref = ref.deref()
+    if (deref !== undefined) return deref
+  }
+}
+function setCachedRendererFunction (id: RendererFunctionId, wc: WebContents, frameId: number, value: CallIntoRenderer) {
+  // eslint-disable-next-line no-undef
+  const wr = new (globalThis as any).WeakRef(value) as WeakRef<CallIntoRenderer>
+  const mapKey = id[0] + '~' + id[1]
+  rendererFunctionCache.set(mapKey, wr)
+  finalizationRegistry.register(value, {
+    id,
+    webContents: wc,
+    frameId
+  } as FinalizerInfo)
+  return value
+}
 
 // Return the description of object's members:
 const getObjectMembers = function (object: any): ObjectMember[] {
@@ -62,6 +95,8 @@ const valueToMeta = function (sender: WebContents, contextId: string, value: any
       // Recognize certain types of objects.
       if (value instanceof Buffer) {
         type = 'buffer'
+      } else if (value instanceof NativeImage) {
+        type = 'nativeimage'
       } else if (Array.isArray(value)) {
         type = 'array'
       } else if (value instanceof Error) {
@@ -70,7 +105,7 @@ const valueToMeta = function (sender: WebContents, contextId: string, value: any
         type = 'value'
       } else if (isPromise(value)) {
         type = 'promise'
-      } else if (hasOwnProperty.call(value, 'callee') && value.length != null) {
+      } else if (Object.prototype.hasOwnProperty.call(value, 'callee') && value.length != null) {
         // Treat the arguments object as array.
         type = 'array'
       } else if (optimizeSimpleObject && v8Util.getHiddenValue(value, 'simple')) {
@@ -94,6 +129,8 @@ const valueToMeta = function (sender: WebContents, contextId: string, value: any
       type,
       members: value.map((el: any) => valueToMeta(sender, contextId, el, optimizeSimpleObject))
     }
+  } else if (type === 'nativeimage') {
+    return { type, value: serialize(value) }
   } else if (type === 'object' || type === 'function') {
     return {
       type,
@@ -144,7 +181,7 @@ const throwRPCError = function (message: string) {
 
 const removeRemoteListenersAndLogWarning = (sender: any, callIntoRenderer: (...args: any[]) => void) => {
   const location = v8Util.getHiddenValue(callIntoRenderer, 'location')
-  let message = `Attempting to call a function in a renderer window that has been closed or released.` +
+  let message = 'Attempting to call a function in a renderer window that has been closed or released.' +
     `\nFunction provided here: ${location}`
 
   if (sender instanceof EventEmitter) {
@@ -163,10 +200,23 @@ const removeRemoteListenersAndLogWarning = (sender: any, callIntoRenderer: (...a
   console.warn(message)
 }
 
+const fakeConstructor = (constructor: Function, name: string) =>
+  new Proxy(Object, {
+    get (target, prop, receiver) {
+      if (prop === 'name') {
+        return name
+      } else {
+        return Reflect.get(target, prop, receiver)
+      }
+    }
+  })
+
 // Convert array of meta data from renderer into array of real values.
 const unwrapArgs = function (sender: WebContents, frameId: number, contextId: string, args: any[]) {
   const metaToValue = function (meta: MetaTypeFromRenderer): any {
     switch (meta.type) {
+      case 'nativeimage':
+        return deserialize(meta.value)
       case 'value':
         return meta.value
       case 'remote-object':
@@ -180,28 +230,29 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
           then: metaToValue(meta.then)
         })
       case 'object': {
-        const ret: any = {}
-        Object.defineProperty(ret.constructor, 'name', { value: meta.name })
+        const ret: any = meta.name !== 'Object' ? Object.create({
+          constructor: fakeConstructor(Object, meta.name)
+        }) : {}
 
         for (const { name, value } of meta.members) {
           ret[name] = metaToValue(value)
         }
         return ret
       }
-      case 'function-with-return-value':
+      case 'function-with-return-value': {
         const returnValue = metaToValue(meta.value)
         return function () {
           return returnValue
         }
+      }
       case 'function': {
         // Merge contextId and meta.id, since meta.id can be the same in
         // different webContents.
-        const objectId = [contextId, meta.id]
+        const objectId: [string, number] = [contextId, meta.id]
 
         // Cache the callbacks in renderer.
-        if (rendererFunctions.has(objectId)) {
-          return rendererFunctions.get(objectId)
-        }
+        const cachedFunction = getCachedRendererFunction(objectId)
+        if (cachedFunction !== undefined) { return cachedFunction; }
 
         const callIntoRenderer = function (this: any, ...args: any[]) {
           let succeed = false
@@ -215,8 +266,7 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
         v8Util.setHiddenValue(callIntoRenderer, 'location', meta.location)
         Object.defineProperty(callIntoRenderer, 'length', { value: meta.length })
 
-        v8Util.setRemoteCallbackFreer(callIntoRenderer, frameId, contextId, meta.id, sender)
-        rendererFunctions.set(objectId, callIntoRenderer)
+        setCachedRendererFunction(objectId, sender, frameId, callIntoRenderer)
         return callIntoRenderer
       }
       default:
@@ -226,9 +276,28 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
   return args.map(metaToValue)
 }
 
-const handleRemoteCommand = function (channel: string, handler: (event: IpcMainEvent, contextId: string, ...args: any[]) => MetaType | null | void) {
+const isRemoteModuleEnabledImpl = function (contents: WebContents) {
+  const webPreferences = (contents as any).getLastWebPreferences() || {}
+  return webPreferences.enableRemoteModule != null ? !!webPreferences.enableRemoteModule : false
+}
+
+const isRemoteModuleEnabledCache = new WeakMap()
+
+export const isRemoteModuleEnabled = function (contents: WebContents) {
+  if (!isRemoteModuleEnabledCache.has(contents)) {
+    isRemoteModuleEnabledCache.set(contents, isRemoteModuleEnabledImpl(contents))
+  }
+
+  return isRemoteModuleEnabledCache.get(contents)
+}
+
+const handleRemoteCommand = function (channel: string, handler: (event: IpcMainEvent, contextId: string, ...args: any[]) => void) {
   ipcMain.on(channel, (event, contextId: string, ...args: any[]) => {
     let returnValue: MetaType | null | void
+    if (!isRemoteModuleEnabled(event.sender)) {
+      event.returnValue = null
+      return
+    }
 
     try {
       returnValue = handler(event, contextId, ...args)
@@ -254,21 +323,29 @@ const emitCustomEvent = function (contents: WebContents, eventName: string, ...a
   return event
 }
 
+const logStack = function (contents: WebContents, code: string, stack: string | undefined) {
+  if (stack) {
+    console.warn(`WebContents (${contents.id}): ${code}`, stack)
+  }
+}
+
 let initialized = false
 export function initialize() {
   if (initialized)
     throw new Error('electron-remote has already been initialized')
   initialized = true
   handleRemoteCommand('ELECTRON_BROWSER_WRONG_CONTEXT_ERROR', function (event, contextId, passedContextId, id) {
-    const objectId = [passedContextId, id]
-    if (!rendererFunctions.has(objectId)) {
+    const objectId: [string, number] = [passedContextId, id]
+    const cachedFunction = getCachedRendererFunction(objectId)
+    if (cachedFunction === undefined) {
       // Do nothing if the error has already been reported before.
       return
     }
-    removeRemoteListenersAndLogWarning(event.sender, rendererFunctions.get(objectId))
+    removeRemoteListenersAndLogWarning(event.sender, cachedFunction)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_REQUIRE', function (event, contextId, moduleName) {
+  handleRemoteCommand('ELECTRON_BROWSER_REQUIRE', function (event, contextId, moduleName, stack) {
+    logStack(event.sender, `remote.require('${moduleName}')`, stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-require', moduleName)
 
     if (customEvent.returnValue === undefined) {
@@ -282,7 +359,8 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_GET_BUILTIN', function (event, contextId, moduleName) {
+  handleRemoteCommand('ELECTRON_BROWSER_GET_BUILTIN', function (event, contextId, moduleName, stack) {
+    logStack(event.sender, `remote.getBuiltin('${moduleName}')`, stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-get-builtin', moduleName)
 
     if (customEvent.returnValue === undefined) {
@@ -296,7 +374,8 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_GLOBAL', function (event, contextId, globalName) {
+  handleRemoteCommand('ELECTRON_BROWSER_GLOBAL', function (event, contextId, globalName, stack) {
+    logStack(event.sender, `remote.getGlobal('${globalName}')`, stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-get-global', globalName)
 
     if (customEvent.returnValue === undefined) {
@@ -310,7 +389,8 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_CURRENT_WINDOW', function (event, contextId) {
+  handleRemoteCommand('ELECTRON_BROWSER_CURRENT_WINDOW', function (event, contextId, stack) {
+    logStack(event.sender, 'remote.getCurrentWindow()', stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-get-current-window')
 
     if (customEvent.returnValue === undefined) {
@@ -324,7 +404,8 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_CURRENT_WEB_CONTENTS', function (event, contextId) {
+  handleRemoteCommand('ELECTRON_BROWSER_CURRENT_WEB_CONTENTS', function (event, contextId, stack) {
+    logStack(event.sender, 'remote.getCurrentWebContents()', stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-get-current-web-contents')
 
     if (customEvent.returnValue === undefined) {
@@ -416,8 +497,8 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, obj[name])
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_DEREFERENCE', function (event, contextId, id, rendererSideRefCount) {
-    objectsRegistry.remove(event.sender, contextId, id, rendererSideRefCount)
+  handleRemoteCommand('ELECTRON_BROWSER_DEREFERENCE', function (event, contextId, id) {
+    objectsRegistry.remove(event.sender, contextId, id)
   })
 
   handleRemoteCommand('ELECTRON_BROWSER_CONTEXT_RELEASE', (event, contextId) => {

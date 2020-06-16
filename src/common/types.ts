@@ -1,3 +1,6 @@
+import type { Size } from 'electron';
+import type { NativeImage } from 'electron';
+
 export type ObjectMember = {
   name: string,
   value?: any,
@@ -36,8 +39,10 @@ export type MetaType = {
 } | {
   type: 'promise',
   then: MetaType
+} | {
+  type: 'nativeimage'
+  value: NativeImage
 }
-
 
 export type MetaTypeFromRenderer = {
   type: 'value',
@@ -50,17 +55,17 @@ export type MetaTypeFromRenderer = {
   value: MetaTypeFromRenderer[]
 } | {
   type: 'buffer',
-  value: Buffer
-} | {
-  type: 'date',
-  value: number
+  value: Uint8Array
 } | {
   type: 'promise',
   then: MetaTypeFromRenderer
 } | {
   type: 'object',
   name: string,
-  members: { name: string, value: MetaTypeFromRenderer }[]
+  members: {
+    name: string,
+    value: MetaTypeFromRenderer
+  }[]
 } | {
   type: 'function-with-return-value',
   value: MetaTypeFromRenderer
@@ -69,4 +74,12 @@ export type MetaTypeFromRenderer = {
   id: number,
   location: string,
   length: number
+} | {
+  type: 'nativeimage',
+  value: {
+    size: Size,
+    buffer: Buffer,
+    scaleFactor: number,
+    dataURL: string
+  }[]
 }

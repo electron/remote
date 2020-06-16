@@ -1,13 +1,36 @@
-import { BrowserWindow, WebContents, ipcRenderer } from "electron"
+import { CallbacksRegistry } from './callbacks-registry'
+import { isPromise, isSerializableObject, serialize, deserialize } from '../common/type-utils'
+import { MetaTypeFromRenderer, ObjectMember, ObjProtoDescriptor, MetaType } from '../common/types'
+import { BrowserWindow, WebContents, ipcRenderer } from 'electron'
+import { browserModules } from '../common/module-names'
 
 const v8Util = process.electronBinding('v8_util')
-
-import { CallbacksRegistry } from './callbacks-registry'
-import { isPromise, isSerializableObject } from '../common/is-promise'
-import { MetaTypeFromRenderer, MetaType, ObjectMember, ObjProtoDescriptor } from "../common/types"
+const { hasSwitch } = process.electronBinding('command_line')
+const { NativeImage } = process.electronBinding('native_image')
 
 const callbacksRegistry = new CallbacksRegistry()
-const remoteObjectCache = v8Util.createIDWeakMap()
+const remoteObjectCache = new Map()
+const finalizationRegistry = new (window as any).FinalizationRegistry((id: number) => {
+  const ref = remoteObjectCache.get(id)
+  if (ref !== undefined && ref.deref() === undefined) {
+    remoteObjectCache.delete(id)
+    ipcRenderer.send('ELECTRON_BROWSER_DEREFERENCE', contextId, id, 0)
+  }
+})
+
+function getCachedRemoteObject (id: number) {
+  const ref = remoteObjectCache.get(id)
+  if (ref !== undefined) {
+    const deref = ref.deref()
+    if (deref !== undefined) return deref
+  }
+}
+function setCachedRemoteObject (id: number, value: any) {
+  const wr = new (window as any).WeakRef(value)
+  remoteObjectCache.set(id, wr)
+  finalizationRegistry.register(value, id)
+  return value
+}
 
 // An unique ID that can represent current context.
 const contextId = v8Util.getHiddenValue<string>(global, 'contextId')
@@ -18,8 +41,10 @@ const contextId = v8Util.getHiddenValue<string>(global, 'contextId')
 // to guard that situation.
 process.on('exit', () => {
   const command = 'ELECTRON_BROWSER_CONTEXT_RELEASE'
-  ipcRenderer.sendSync(command, contextId)
+  ipcRenderer.send(command, contextId)
 })
+
+const IS_REMOTE_PROXY = Symbol('is-remote-proxy')
 
 // Convert the arguments object into an array of meta data.
 function wrapArgs (args: any[], visited = new Set()): any {
@@ -32,7 +57,9 @@ function wrapArgs (args: any[], visited = new Set()): any {
       }
     }
 
-    if (Array.isArray(value)) {
+    if (value instanceof NativeImage) {
+      return { type: 'nativeimage', value: serialize(value) }
+    } else if (Array.isArray(value)) {
       visited.add(value)
       const meta = {
         type: 'array',
@@ -58,10 +85,10 @@ function wrapArgs (args: any[], visited = new Set()): any {
             value.then(onFulfilled, onRejected)
           })
         }
-      } else if (v8Util.getHiddenValue(value, 'atomId')) {
+      } else if (v8Util.getHiddenValue(value, 'electronId')) {
         return {
           type: 'remote-object',
-          id: v8Util.getHiddenValue(value, 'atomId')
+          id: v8Util.getHiddenValue(value, 'electronId')
         }
       }
 
@@ -71,7 +98,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
         members: []
       }
       visited.add(value)
-      for (const prop in value) {
+      for (const prop in value) { // eslint-disable-line guard-for-in
         meta.members.push({
           name: prop,
           value: valueToMeta(value[prop])
@@ -108,12 +135,12 @@ function setObjectMembers (ref: any, object: any, metaId: number, members: Objec
   if (!Array.isArray(members)) return
 
   for (const member of members) {
-    if (object.hasOwnProperty(member.name)) continue
+    if (Object.prototype.hasOwnProperty.call(object, member.name)) continue
 
     const descriptor: PropertyDescriptor = { enumerable: member.enumerable }
     if (member.type === 'method') {
       const remoteMemberFunction = function (this: any, ...args: any[]) {
-        let command: string
+        let command
         if (this && this.constructor === remoteMemberFunction) {
           command = 'ELECTRON_BROWSER_MEMBER_CONSTRUCTOR'
         } else {
@@ -181,13 +208,14 @@ function proxyFunctionProperties (remoteMemberFunction: Function, metaId: number
   }
 
   return new Proxy(remoteMemberFunction as any, {
-    set: (target, property, value, receiver) => {
+    set: (target, property, value) => {
       if (property !== 'ref') loadRemoteProperties()
       target[property] = value
       return true
     },
-    get: (target, property, receiver) => {
-      if (!target.hasOwnProperty(property)) loadRemoteProperties()
+    get: (target, property) => {
+      if (property === IS_REMOTE_PROXY) return true
+      if (!Object.prototype.hasOwnProperty.call(target, property)) loadRemoteProperties()
       const value = target[property]
       if (property === 'toString' && typeof value === 'function') {
         return value.bind(target)
@@ -212,7 +240,9 @@ function metaToValue (meta: MetaType): any {
   if (meta.type === 'value') {
     return meta.value
   } else if (meta.type === 'array') {
-    return meta.members.map(member => metaToValue(member))
+    return meta.members.map((member) => metaToValue(member))
+  } else if (meta.type === 'nativeimage') {
+    return deserialize(meta.value)
   } else if (meta.type === 'buffer') {
     return Buffer.from(meta.value.buffer, meta.value.byteOffset, meta.value.byteLength)
   } else if (meta.type === 'promise') {
@@ -220,15 +250,12 @@ function metaToValue (meta: MetaType): any {
   } else if (meta.type === 'error') {
     return metaToError(meta)
   } else if (meta.type === 'exception') {
-    if (meta.value.type === 'error')
-      throw metaToError(meta.value)
-    else
-      throw new Error(`Unexpected value type in exception: ${meta.value.type}`)
+    if (meta.value.type === 'error') { throw metaToError(meta.value); } else { throw new Error(`Unexpected value type in exception: ${meta.value.type}`); }
   } else {
     let ret
-    if ('id' in meta && remoteObjectCache.has(meta.id)) {
-      v8Util.addRemoteObjectRef(contextId, meta.id)
-      return remoteObjectCache.get(meta.id)
+    if ('id' in meta) {
+      const cached = getCachedRemoteObject(meta.id)
+      if (cached !== undefined) { return cached; }
     }
 
     // A shadow class to represent the remote function object.
@@ -250,13 +277,13 @@ function metaToValue (meta: MetaType): any {
 
     setObjectMembers(ret, ret, meta.id, meta.members)
     setObjectPrototype(ret, ret, meta.id, meta.proto)
-    Object.defineProperty(ret.constructor, 'name', { value: meta.name })
+    if (ret.constructor && (ret.constructor as any)[IS_REMOTE_PROXY]) {
+      Object.defineProperty(ret.constructor, 'name', { value: meta.name })
+    }
 
     // Track delegate obj's lifetime & tell browser to clean up when object is GCed.
-    v8Util.setRemoteObjectFreer(ret, contextId, meta.id)
-    v8Util.setHiddenValue(ret, 'atomId', meta.id)
-    v8Util.addRemoteObjectRef(contextId, meta.id)
-    remoteObjectCache.set(meta.id, ret)
+    v8Util.setHiddenValue(ret, 'electronId', meta.id)
+    setCachedRemoteObject(meta.id, ret)
     return ret
   }
 }
@@ -280,6 +307,16 @@ function handleMessage (channel: string, handler: Function) {
   })
 }
 
+const enableStacks = hasSwitch('enable-api-filtering-logging')
+
+function getCurrentStack (): string | undefined {
+  const target = { stack: undefined as string | undefined }
+  if (enableStacks) {
+    Error.captureStackTrace(target, getCurrentStack)
+  }
+  return target.stack
+}
+
 // Browser calls a callback in renderer.
 handleMessage('ELECTRON_RENDERER_CALLBACK', (id: number, args: any) => {
   callbacksRegistry.apply(id, metaToValue(args))
@@ -290,36 +327,36 @@ handleMessage('ELECTRON_RENDERER_RELEASE_CALLBACK', (id: number) => {
   callbacksRegistry.remove(id)
 })
 
-exports.require = (module: string): any => {
+exports.require = (module: string) => {
   const command = 'ELECTRON_BROWSER_REQUIRE'
-  const meta = ipcRenderer.sendSync(command, contextId, module)
+  const meta = ipcRenderer.sendSync(command, contextId, module, getCurrentStack())
   return metaToValue(meta)
 }
 
 // Alias to remote.require('electron').xxx.
-export function getBuiltin(module: string): any {
+export function getBuiltin (module: string) {
   const command = 'ELECTRON_BROWSER_GET_BUILTIN'
-  const meta = ipcRenderer.sendSync(command, contextId, module)
+  const meta = ipcRenderer.sendSync(command, contextId, module, getCurrentStack())
   return metaToValue(meta)
 }
 
-export function getCurrentWindow(): BrowserWindow {
+export function getCurrentWindow (): BrowserWindow {
   const command = 'ELECTRON_BROWSER_CURRENT_WINDOW'
-  const meta = ipcRenderer.sendSync(command, contextId)
+  const meta = ipcRenderer.sendSync(command, contextId, getCurrentStack())
   return metaToValue(meta)
 }
 
 // Get current WebContents object.
-export function getCurrentWebContents(): WebContents {
+export function getCurrentWebContents (): WebContents {
   const command = 'ELECTRON_BROWSER_CURRENT_WEB_CONTENTS'
-  const meta = ipcRenderer.sendSync(command, contextId)
+  const meta = ipcRenderer.sendSync(command, contextId, getCurrentStack())
   return metaToValue(meta)
 }
 
 // Get a global object in browser.
-export function getGlobal<T = any>(name: string): T {
+export function getGlobal<T = any> (name: string): T {
   const command = 'ELECTRON_BROWSER_GLOBAL'
-  const meta = ipcRenderer.sendSync(command, contextId, name)
+  const meta = ipcRenderer.sendSync(command, contextId, name, getCurrentStack())
   return metaToValue(meta)
 }
 
@@ -330,26 +367,18 @@ Object.defineProperty(exports, 'process', {
 })
 
 // Create a function that will return the specified value when called in browser.
-export function createFunctionWithReturnValue<T>(returnValue: T): () => T {
+export function createFunctionWithReturnValue<T> (returnValue: T): () => T {
   const func = () => returnValue
   v8Util.setHiddenValue(func, 'returnValue', true)
   return func
 }
 
-/*
 const addBuiltinProperty = (name: string) => {
   Object.defineProperty(exports, name, {
     get: () => exports.getBuiltin(name)
   })
 }
 
-const { commonModuleList } = require('@electron/internal/common/api/module-list')
-const browserModules = commonModuleList.concat(require('@electron/internal/browser/api/module-keys'))
-
-// And add a helper receiver for each one.
 browserModules
-  .filter((m) => !m.private)
   .map((m) => m.name)
   .forEach(addBuiltinProperty)
-
-*/
