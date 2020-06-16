@@ -4,7 +4,12 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "electron": "*",
     "typescript": "^3.8.0"
+  },
+  "peerDependencies": {
+    "electron": ">= 8.x"
+  },
+  "devDependencies": {
+    "electron": ">= 8.x"
   }
 }
