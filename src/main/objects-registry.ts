@@ -1,5 +1,3 @@
-'use strict'
-
 import { WebContents } from 'electron'
 
 const v8Util = process.electronBinding('v8_util')
@@ -9,18 +7,15 @@ const getOwnerKey = (webContents: WebContents, contextId: string) => {
 }
 
 class ObjectsRegistry {
-  nextId: number = 0
-  storage: Record<number, { count: number, object: any }>
-  owners: Record<string, Map<number, number>>
-  constructor () {
-    // Stores all objects by ref-counting.
-    // (id) => {object, count}
-    this.storage = {}
+  private nextId: number = 0
 
-    // Stores the IDs + refCounts of objects referenced by WebContents.
-    // (ownerKey) => { id: refCount }
-    this.owners = {}
-  }
+  // Stores all objects by ref-counting.
+  // (id) => {object, count}
+  private storage: Record<number, { count: number, object: any }> = {}
+
+  // Stores the IDs + refCounts of objects referenced by WebContents.
+  // (ownerKey) => { id: refCount }
+  private owners: Record<string, Map<number, number>> = {}
 
   // Register a new object and return its assigned ID. If the object is already
   // registered then the already assigned ID would be returned.
@@ -54,19 +49,11 @@ class ObjectsRegistry {
   // Dereference an object according to its ID.
   // Note that an object may be double-freed (cleared when page is reloaded, and
   // then garbage collected in old page).
-  // rendererSideRefCount is the ref count that the renderer process reported
-  // at time of GC if this is different to the number of references we sent to
-  // the given owner then a GC occurred between a ref being sent and the value
-  // being pulled out of the weak map.
-  // In this case we decrement out ref count and do not delete the stored
-  // object
-  // For more details on why we do renderer side ref counting see
-  // https://github.com/electron/electron/pull/17464
-  remove (webContents: WebContents, contextId: string, id: number, rendererSideRefCount: number) {
+  remove (webContents: WebContents, contextId: string, id: number) {
     const ownerKey = getOwnerKey(webContents, contextId)
     const owner = this.owners[ownerKey]
     if (owner && owner.has(id)) {
-      const newRefCount = owner.get(id)! - rendererSideRefCount
+      const newRefCount = owner.get(id)! - 1
 
       // Only completely remove if the number of references GCed in the
       // renderer is the same as the number of references we sent them
@@ -94,14 +81,14 @@ class ObjectsRegistry {
 
   // Private: Saves the object into storage and assigns an ID for it.
   saveToStorage (object: any) {
-    let id: number = v8Util.getHiddenValue(object, 'atomId')
+    let id: number = v8Util.getHiddenValue(object, 'electronId')
     if (!id) {
       id = ++this.nextId
       this.storage[id] = {
         count: 0,
         object: object
       }
-      v8Util.setHiddenValue(object, 'atomId', id)
+      v8Util.setHiddenValue(object, 'electronId', id)
     }
     return id
   }
@@ -114,7 +101,7 @@ class ObjectsRegistry {
     }
     pointer.count -= 1
     if (pointer.count === 0) {
-      v8Util.deleteHiddenValue(pointer.object, 'atomId')
+      v8Util.deleteHiddenValue(pointer.object, 'electronId')
       delete this.storage[id]
     }
   }
@@ -123,13 +110,17 @@ class ObjectsRegistry {
   registerDeleteListener (webContents: WebContents, contextId: string) {
     // contextId => ${processHostId}-${contextCount}
     const processHostId = contextId.split('-')[0]
-    const listener = (event: any, deletedProcessHostId: string) => {
+    const listener = (_: any, deletedProcessHostId: string) => {
       if (deletedProcessHostId &&
           deletedProcessHostId.toString() === processHostId) {
         webContents.removeListener('render-view-deleted' as any, listener)
         this.clear(webContents, contextId)
       }
     }
+    // Note that the "render-view-deleted" event may not be emitted on time when
+    // the renderer process get destroyed because of navigation, we rely on the
+    // renderer process to send "ELECTRON_BROWSER_CONTEXT_RELEASE" message to
+    // guard this situation.
     webContents.on('render-view-deleted' as any, listener)
   }
 }
