@@ -51,7 +51,7 @@ function makeRemotely (windowGetter: () => BrowserWindow) {
 function makeWindow () {
   let w: BrowserWindow
   before(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, enableRemoteModule: false } })
+    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, enableRemoteModule: true } })
     await w.loadURL('about:blank')
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
@@ -67,7 +67,7 @@ function makeWindow () {
 function makeEachWindow () {
   let w: BrowserWindow
   beforeEach(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, enableRemoteModule: false } })
+    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, enableRemoteModule: true } })
     await w.loadURL('about:blank')
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
@@ -200,7 +200,7 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           preload,
-          enableRemoteModule: false
+          enableRemoteModule: true
         }
       })
       w.loadURL('about:blank')
@@ -214,7 +214,7 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
-          enableRemoteModule: false
+          enableRemoteModule: true
         }
       })
 
@@ -235,7 +235,7 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
-          enableRemoteModule: false
+          enableRemoteModule: true
         }
       })
       await w.loadFile(path.join(fixtures, 'remote-event-handler.html'))
