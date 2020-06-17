@@ -30,8 +30,7 @@
   "scripts": {
     "prepublishOnly": "tsc",
     "test": "electron test --extension=ts --require=ts-node/register --exit --js-flags=--expose_gc",
-    "test:ci": "yarn test --reporter=mocha-multi-reporters --reporter-options=configFile=.circleci/mocha-reporter-config.json",
-    "test2": "electron spec-main"
+    "test:ci": "yarn test --reporter=mocha-multi-reporters --reporter-options=configFile=.circleci/mocha-reporter-config.json"
   },
   "files": [
     "README.md",
