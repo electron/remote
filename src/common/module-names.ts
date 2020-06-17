@@ -11,6 +11,7 @@ export const browserModules = [
   { name: 'BrowserWindow' },
   { name: 'contentTracing' },
   { name: 'crashReporter' },
+  { name: 'desktopCapturer' },
   { name: 'dialog' },
   { name: 'globalShortcut' },
   { name: 'ipcMain' },

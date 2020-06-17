@@ -375,6 +375,7 @@ export function createFunctionWithReturnValue<T> (returnValue: T): () => T {
 
 const addBuiltinProperty = (name: string) => {
   Object.defineProperty(exports, name, {
+    enumerable: true,
     get: () => exports.getBuiltin(name)
   })
 }
