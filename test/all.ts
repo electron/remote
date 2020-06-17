@@ -2,11 +2,12 @@
 import { initialize } from '../src/main'
 import { expect } from 'chai'
 import * as path from 'path'
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, nativeImage, NativeImage } from 'electron'
 
 
 import { closeAllWindows } from './window-helpers'
 import { emittedOnce } from './events-helpers'
+import { serialize, deserialize } from '../src/common/type-utils'
 
 before(() => {
   initialize()
@@ -79,6 +80,143 @@ function makeEachWindow () {
   afterEach(closeAllWindows)
   return () => w
 }
+
+describe('typeUtils serialization/deserialization', () => {
+  it('serializes and deserializes an empty NativeImage', () => {
+    const image = nativeImage.createEmpty()
+    const serializedImage = serialize(image)
+    const empty = deserialize(serializedImage)
+
+    expect(empty.isEmpty()).to.be.true()
+    expect(empty.getAspectRatio()).to.equal(1)
+    expect(empty.toDataURL()).to.equal('data:image/png;base64,')
+    expect(empty.toDataURL({ scaleFactor: 2.0 })).to.equal('data:image/png;base64,')
+    expect(empty.getSize()).to.deep.equal({ width: 0, height: 0 })
+    expect(empty.getBitmap()).to.be.empty()
+    expect(empty.getBitmap({ scaleFactor: 2.0 })).to.be.empty()
+    expect(empty.toBitmap()).to.be.empty()
+    expect(empty.toBitmap({ scaleFactor: 2.0 })).to.be.empty()
+    expect(empty.toJPEG(100)).to.be.empty()
+    expect(empty.toPNG()).to.be.empty()
+    expect(empty.toPNG({ scaleFactor: 2.0 })).to.be.empty()
+  })
+
+  it('serializes and deserializes a non-empty NativeImage', () => {
+    const dataURL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg=='
+    const image = nativeImage.createFromDataURL(dataURL)
+    const serializedImage = serialize(image)
+    const nonEmpty = deserialize(serializedImage)
+
+    expect(nonEmpty.isEmpty()).to.be.false()
+    expect(nonEmpty.getAspectRatio()).to.equal(1)
+    expect(nonEmpty.toDataURL()).to.not.be.empty()
+    expect(nonEmpty.toDataURL({ scaleFactor: 1.0 })).to.equal(dataURL)
+    expect(nonEmpty.getSize()).to.deep.equal({ width: 2, height: 2 })
+    expect(nonEmpty.getBitmap()).to.not.be.empty()
+    expect(nonEmpty.toPNG()).to.not.be.empty()
+  })
+
+  it('serializes and deserializes a non-empty NativeImage with multiple representations', () => {
+    const image = nativeImage.createEmpty()
+
+    const dataURL1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYlWNgAAIAAAUAAdafFs0AAAAASUVORK5CYII='
+    image.addRepresentation({ scaleFactor: 1.0, dataURL: dataURL1 })
+
+    const dataURL2 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg=='
+    image.addRepresentation({ scaleFactor: 2.0, dataURL: dataURL2 })
+
+    const serializedImage = serialize(image)
+    const nonEmpty = deserialize(serializedImage)
+
+    expect(nonEmpty.isEmpty()).to.be.false()
+    expect(nonEmpty.getAspectRatio()).to.equal(1)
+    expect(nonEmpty.getSize()).to.deep.equal({ width: 1, height: 1 })
+    expect(nonEmpty.getBitmap()).to.not.be.empty()
+    expect(nonEmpty.getBitmap({ scaleFactor: 1.0 })).to.not.be.empty()
+    expect(nonEmpty.getBitmap({ scaleFactor: 2.0 })).to.not.be.empty()
+    expect(nonEmpty.toBitmap()).to.not.be.empty()
+    expect(nonEmpty.toBitmap({ scaleFactor: 1.0 })).to.not.be.empty()
+    expect(nonEmpty.toBitmap({ scaleFactor: 2.0 })).to.not.be.empty()
+    expect(nonEmpty.toPNG()).to.not.be.empty()
+    expect(nonEmpty.toPNG({ scaleFactor: 1.0 })).to.not.be.empty()
+    expect(nonEmpty.toPNG({ scaleFactor: 2.0 })).to.not.be.empty()
+    expect(nonEmpty.toDataURL()).to.not.be.empty()
+    expect(nonEmpty.toDataURL({ scaleFactor: 1.0 })).to.equal(dataURL1)
+    expect(nonEmpty.toDataURL({ scaleFactor: 2.0 })).to.equal(dataURL2)
+  })
+
+  it('serializes and deserializes an Array', () => {
+    const array = [1, 2, 3, 4, 5]
+    const serialized = serialize(array)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.deep.equal(array)
+  })
+
+  it('serializes and deserializes a Buffer', () => {
+    const buffer = Buffer.from('hello world!', 'utf-8')
+    const serialized = serialize(buffer)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.deep.equal(buffer)
+  })
+
+  it('serializes and deserializes a Boolean', () => {
+    const bool = true
+    const serialized = serialize(bool)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.equal(bool)
+  })
+
+  it('serializes and deserializes a Date', () => {
+    const date = new Date()
+    const serialized = serialize(date)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.equal(date)
+  })
+
+  it('serializes and deserializes a Number', () => {
+    const number = 42
+    const serialized = serialize(number)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.equal(number)
+  })
+
+  it('serializes and deserializes a Regexp', () => {
+    const regex = new RegExp('ab+c')
+    const serialized = serialize(regex)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.equal(regex)
+  })
+
+  it('serializes and deserializes a String', () => {
+    const str = 'hello world'
+    const serialized = serialize(str)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.equal(str)
+  })
+
+  it('serializes and deserializes an Error', () => {
+    const err = new Error('oh crap')
+    const serialized = serialize(err)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.equal(err)
+  })
+
+  it('serializes and deserializes a simple Object', () => {
+    const obj = { hello: 'world', 'answer-to-everything': 42 }
+    const serialized = serialize(obj)
+    const deserialized = deserialize(serialized)
+
+    expect(deserialized).to.deep.equal(obj)
+  })
+})
 
 describe('remote module', () => {
   const fixtures = path.join(__dirname, 'fixtures')
@@ -226,6 +364,74 @@ describe('remote module', () => {
       w.loadFile(path.join(fixtures, 'render-view-deleted.html'))
     })
   })
+  
+  describe('nativeImage serialization', () => {
+    const w = makeWindow()
+    const remotely = makeRemotely(w)
+
+    it('can serialize an empty nativeImage from renderer to main', async () => {
+      const getImageEmpty = (img: NativeImage) => img.isEmpty()
+
+      w().webContents.once('remote-get-global', (event) => {
+        event.returnValue = getImageEmpty
+      })
+
+      await expect(remotely(() => {
+        const emptyImage = require('electron').nativeImage.createEmpty()
+        return require('electron').remote.getGlobal('someFunction')(emptyImage)
+      })).to.eventually.be.true()
+    })
+
+    it('can serialize an empty nativeImage from main to renderer', async () => {
+      w().webContents.once('remote-get-global', (event) => {
+        const emptyImage = require('electron').nativeImage.createEmpty()
+        event.returnValue = emptyImage
+      })
+
+      await expect(remotely(() => {
+        const image = require('electron').remote.getGlobal('someFunction')
+        return image.isEmpty()
+      })).to.eventually.be.true()
+    })
+
+    it('can serialize a non-empty nativeImage from renderer to main', async () => {
+      const getImageSize = (img: NativeImage) => img.getSize()
+
+      w().webContents.once('remote-get-global', (event) => {
+        event.returnValue = getImageSize
+      })
+
+      await expect(remotely(() => {
+        const { nativeImage } = require('electron')
+        const nonEmptyImage = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==')
+        return require('electron').remote.getGlobal('someFunction')(nonEmptyImage)
+      })).to.eventually.deep.equal({ width: 2, height: 2 })
+    })
+
+    it('can serialize a non-empty nativeImage from main to renderer', async () => {
+      w().webContents.once('remote-get-global', (event) => {
+        const nonEmptyImage = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==')
+        event.returnValue = nonEmptyImage
+      })
+
+      await expect(remotely(() => {
+        const image = require('electron').remote.getGlobal('someFunction')
+        return image.getSize()
+      })).to.eventually.deep.equal({ width: 2, height: 2 })
+    })
+
+    it('can properly create a menu with an nativeImage icon in the renderer', async () => {
+      await expect(remotely(() => {
+        const { remote, nativeImage } = require('electron')
+        remote.Menu.buildFromTemplate([
+          {
+            label: 'hello',
+            icon: nativeImage.createEmpty()
+          }
+        ])
+      })).to.be.fulfilled()
+    })
+  })
 
   describe('remote listeners', () => {
     afterEach(closeAllWindows)
@@ -259,7 +465,7 @@ describe('remote module', () => {
         console.warn = (message: string) => {
           warnMessage = message
           warned()
-        };
+        }
         w.webContents.emit('remote-handler', { sender: w.webContents })
         await warnPromise
       } finally {
@@ -793,6 +999,31 @@ describe('remote module', () => {
         expect(e.message).to.match(/Could not call remote function/)
         expect(e.cause.message).to.equal('error from main')
       }
+    })
+  })
+
+  describe('gc behavior', () => {
+    const win = makeWindow()
+    const remotely = makeRemotely(win)
+    it('is resilient to gc happening between request and response', async () => {
+      const obj = { x: 'y' }
+      win().webContents.on('remote-get-global', (event) => {
+        event.returnValue = obj
+      })
+      await remotely(() => {
+        const { ipcRenderer } = require('electron')
+        const originalSendSync = ipcRenderer.sendSync.bind(ipcRenderer) as any
+        ipcRenderer.sendSync = (...args: any[]): any => {
+          const ret = originalSendSync(...args)
+          (window as any).gc()
+          return ret
+        }
+
+        for (let i = 0; i < 100; i++) {
+          // eslint-disable-next-line
+          require('electron').remote.getGlobal('test').x
+        }
+      })
     })
   })
 })
