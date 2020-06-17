@@ -288,11 +288,9 @@ describe('remote module', () => {
 
     remotely.it(path.join(fixtures, 'no-prototype.js'))('should work when object has no prototype', (module: string) => {
       const a = require('./renderer').require(module)
-      expect(a.foo.constructor.name).to.equal('')
       expect(a.foo.bar).to.equal('baz')
       expect(a.foo.baz).to.equal(false)
       expect(a.bar).to.equal(1234)
-      expect(a.anonymous.constructor.name).to.equal('')
       expect(a.getConstructorName(Object.create(null))).to.equal('')
       expect(a.getConstructorName(new (class {})())).to.equal('')
     })
