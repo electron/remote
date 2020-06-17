@@ -92,14 +92,14 @@ describe('remote module', () => {
         w().webContents.once('remote-get-global', (event, name) => {
           event.returnValue = name
         })
-        expect(await remotely(() => require('../renderer').getGlobal('test'))).to.equal('test')
+        expect(await remotely(() => require('./renderer').getGlobal('test'))).to.equal('test')
       })
 
       it('throws when no returnValue set', async () => {
         w().webContents.once('remote-get-global', (event) => {
           event.preventDefault()
         })
-        await expect(remotely(() => require('../renderer').getGlobal('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
+        await expect(remotely(() => require('./renderer').getGlobal('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
       })
     })
 
@@ -108,14 +108,14 @@ describe('remote module', () => {
         w().webContents.once('remote-get-builtin', (event, name) => {
           event.returnValue = name
         })
-        expect(await remotely(() => (require('../renderer') as any).getBuiltin('test'))).to.equal('test')
+        expect(await remotely(() => (require('./renderer') as any).getBuiltin('test'))).to.equal('test')
       })
 
       it('throws when no returnValue set', async () => {
         w().webContents.once('remote-get-builtin', (event) => {
           event.preventDefault()
         })
-        await expect(remotely(() => (require('../renderer') as any).getBuiltin('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
+        await expect(remotely(() => (require('./renderer') as any).getBuiltin('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
       })
     })
 
@@ -124,14 +124,14 @@ describe('remote module', () => {
         w().webContents.once('remote-require', (event, name) => {
           event.returnValue = name
         })
-        expect(await remotely(() => require('../renderer').require('test'))).to.equal('test')
+        expect(await remotely(() => require('./renderer').require('test'))).to.equal('test')
       })
 
       it('throws when no returnValue set', async () => {
         w().webContents.once('remote-require', (event) => {
           event.preventDefault()
         })
-        await expect(remotely(() => require('../renderer').require('test'))).to.eventually.be.rejected(`Blocked remote.require('test')`)
+        await expect(remotely(() => require('./renderer').require('test'))).to.eventually.be.rejected(`Blocked remote.require('test')`)
       })
     })
 
@@ -140,14 +140,14 @@ describe('remote module', () => {
         w().webContents.once('remote-get-current-window', (e) => {
           e.returnValue = 'some window'
         })
-        expect(await remotely(() => require('../renderer').getCurrentWindow())).to.equal('some window')
+        expect(await remotely(() => require('./renderer').getCurrentWindow())).to.equal('some window')
       })
 
       it('throws when no returnValue set', async () => {
         w().webContents.once('remote-get-current-window', (event) => {
           event.preventDefault()
         })
-        await expect(remotely(() => require('../renderer').getCurrentWindow())).to.eventually.be.rejected(`Blocked remote.getCurrentWindow()`)
+        await expect(remotely(() => require('./renderer').getCurrentWindow())).to.eventually.be.rejected(`Blocked remote.getCurrentWindow()`)
       })
     })
 
@@ -156,14 +156,14 @@ describe('remote module', () => {
         w().webContents.once('remote-get-current-web-contents', (event) => {
           event.returnValue = 'some web contents'
         })
-        expect(await remotely(() => require('../renderer').getCurrentWebContents())).to.equal('some web contents')
+        expect(await remotely(() => require('./renderer').getCurrentWebContents())).to.equal('some web contents')
       })
 
       it('throws when no returnValue set', async () => {
         w().webContents.once('remote-get-current-web-contents', (event) => {
           event.preventDefault()
         })
-        await expect(remotely(() => require('../renderer').getCurrentWebContents())).to.eventually.be.rejected(`Blocked remote.getCurrentWebContents()`)
+        await expect(remotely(() => require('./renderer').getCurrentWebContents())).to.eventually.be.rejected(`Blocked remote.getCurrentWebContents()`)
       })
     })
   })
@@ -267,19 +267,19 @@ describe('remote module', () => {
     const remotely = makeRemotely(w)
 
     remotely.it()('should returns same object for the same module', () => {
-      const remote = require('../renderer')
+      const remote = require('./renderer')
       const a = remote.require('electron')
       const b = remote.require('electron')
       expect(a).to.equal(b)
     })
 
     remotely.it(path.join(fixtures, 'id.js'))('should work when object contains id property', (module: string) => {
-      const { id } = require('../renderer').require(module)
+      const { id } = require('./renderer').require(module)
       expect(id).to.equal(1127)
     })
 
     remotely.it(path.join(fixtures, 'no-prototype.js'))('should work when object has no prototype', (module: string) => {
-      const a = require('../renderer').require(module)
+      const a = require('./renderer').require(module)
       expect(a.foo.constructor.name).to.equal('')
       expect(a.foo.bar).to.equal('baz')
       expect(a.foo.baz).to.equal(false)
@@ -291,12 +291,12 @@ describe('remote module', () => {
 
     it('should search module from the user app', async () => {
       expectPathsEqual(
-        path.normalize(await remotely(() => require('../renderer').process.mainModule!.filename)),
+        path.normalize(await remotely(() => require('./renderer').process.mainModule!.filename)),
         path.resolve(__dirname, 'index.js')
       )
         /*
       expectPathsEqual(
-        path.normalize(await remotely(() => require('../renderer').process.mainModule!.paths[0])),
+        path.normalize(await remotely(() => require('./renderer').process.mainModule!.paths[0])),
         path.resolve(__dirname, 'node_modules')
       )
          */
@@ -306,13 +306,13 @@ describe('remote module', () => {
       const path = require('path')
 
       {
-        const a = require('../renderer').require(path.join(fixtures, 'export-function-with-properties.js'))
+        const a = require('./renderer').require(path.join(fixtures, 'export-function-with-properties.js'))
         expect(typeof a).to.equal('function')
         expect(a.bar).to.equal('baz')
       }
 
       {
-        const a = require('../renderer').require(path.join(fixtures, 'function-with-properties.js'))
+        const a = require('./renderer').require(path.join(fixtures, 'function-with-properties.js'))
         expect(typeof a).to.equal('object')
         expect(a.foo()).to.equal('hello')
         expect(a.foo.bar).to.equal('baz')
@@ -322,7 +322,7 @@ describe('remote module', () => {
       }
 
       {
-        const a = require('../renderer').require(path.join(fixtures, 'function-with-missing-properties.js')).setup()
+        const a = require('./renderer').require(path.join(fixtures, 'function-with-missing-properties.js')).setup()
         expect(a.bar()).to.equal(true)
         expect(a.bar.baz).to.be.undefined()
       }
@@ -330,7 +330,7 @@ describe('remote module', () => {
 
     remotely.it(fixtures)('should work with static class members', (fixtures: string) => {
       const path = require('path')
-      const a = require('../renderer').require(path.join(fixtures, 'remote-static.js'))
+      const a = require('./renderer').require(path.join(fixtures, 'remote-static.js'))
       expect(typeof a.Foo).to.equal('function')
       expect(a.Foo.foo()).to.equal(3)
       expect(a.Foo.bar).to.equal('baz')
@@ -339,7 +339,7 @@ describe('remote module', () => {
 
     remotely.it(fixtures)('includes the length of functions specified as arguments', (fixtures: string) => {
       const path = require('path')
-      const a = require('../renderer').require(path.join(fixtures, 'function-with-args.js'))
+      const a = require('./renderer').require(path.join(fixtures, 'function-with-args.js'))
       /* eslint-disable @typescript-eslint/no-unused-vars */
       expect(a((a: any, b: any, c: any) => {})).to.equal(3)
       expect(a((a: any) => {})).to.equal(1)
@@ -349,7 +349,7 @@ describe('remote module', () => {
 
     remotely.it(fixtures)('handles circular references in arrays and objects', (fixtures: string) => {
       const path = require('path')
-      const a = require('../renderer').require(path.join(fixtures, 'circular.js'))
+      const a = require('./renderer').require(path.join(fixtures, 'circular.js'))
 
       let arrayA: any[] = ['foo']
       const arrayB = [arrayA, 'bar']
@@ -405,7 +405,7 @@ describe('remote module', () => {
     const remotely = makeRemotely(makeWindow())
 
     remotely.it(fixtures)('should be called in browser synchronously', async (fixtures: string) => {
-      const remote = require('../renderer')
+      const remote = require('./renderer')
       const path = require('path')
       const buf = Buffer.from('test')
       const call = remote.require(path.join(fixtures, 'call.js'))
@@ -419,17 +419,17 @@ describe('remote module', () => {
 
     const mainModules = Object.keys(require('electron'))
     remotely.it(mainModules)('includes browser process modules as properties', (mainModules: string[]) => {
-      const remote = require('../renderer')
+      const remote = require('./renderer')
       const remoteModules = mainModules.filter(name => (remote as any)[name])
       expect(remoteModules).to.be.deep.equal(mainModules)
     })
 
     remotely.it(fixtures)('returns toString() of original function via toString()', (fixtures: string) => {
       const path = require('path')
-      const { readText } = require('../renderer').clipboard
+      const { readText } = require('./renderer').clipboard
       expect(readText.toString().startsWith('function')).to.be.true()
 
-      const { functionWithToStringProperty } = require('../renderer').require(path.join(fixtures, 'to-string-non-function.js'))
+      const { functionWithToStringProperty } = require('./renderer').require(path.join(fixtures, 'to-string-non-function.js'))
       expect(functionWithToStringProperty.toString).to.equal('hello')
     })
   })
@@ -439,7 +439,7 @@ describe('remote module', () => {
 
     remotely.it(fixtures)('can change its properties', (fixtures: string) => {
       const module = require('path').join(fixtures, 'property.js')
-      const property = require('../renderer').require(module)
+      const property = require('./renderer').require(module)
       expect(property.property).to.equal(1127)
       property.property = null
       expect(property.property).to.equal(null)
@@ -453,14 +453,14 @@ describe('remote module', () => {
       expect(property.getFunctionProperty()).to.equal('bar-browser')
       property.func.property = 'foo' // revert back
 
-      const property2 = require('../renderer').require(module)
+      const property2 = require('./renderer').require(module)
       expect(property2.property).to.equal(1007)
 
       property.property = 1127 // revert back
     })
 
     remotely.it(fixtures)('rethrows errors getting/setting properties', (fixtures: string) => {
-      const foo = require('../renderer').require(require('path').join(fixtures, 'error-properties.js'))
+      const foo = require('./renderer').require(require('path').join(fixtures, 'error-properties.js'))
 
       expect(() => {
         // eslint-disable-next-line
@@ -473,19 +473,19 @@ describe('remote module', () => {
     })
 
     remotely.it(fixtures)('can set a remote property with a remote object', (fixtures: string) => {
-      const remote = require('../renderer')
+      const remote = require('./renderer')
       const foo = remote.require(require('path').join(fixtures, 'remote-object-set.js'))
       foo.bar = remote.getCurrentWindow()
     })
 
     remotely.it(fixtures)('can construct an object from its member', (fixtures: string) => {
-      const call = require('../renderer').require(require('path').join(fixtures, 'call.js'))
+      const call = require('./renderer').require(require('path').join(fixtures, 'call.js'))
       const obj = new call.constructor()
       expect(obj.test).to.equal('test')
     })
 
     remotely.it(fixtures)('can reassign and delete its member functions', (fixtures: string) => {
-      const remoteFunctions = require('../renderer').require(require('path').join(fixtures, 'function.js'))
+      const remoteFunctions = require('./renderer').require(require('path').join(fixtures, 'function.js'))
       expect(remoteFunctions.aFunction()).to.equal(1127)
 
       remoteFunctions.aFunction = () => { return 1234 }
@@ -495,7 +495,7 @@ describe('remote module', () => {
     })
 
     remotely.it('is referenced by its members', () => {
-      const stringify = require('../renderer').getGlobal('JSON').stringify
+      const stringify = require('./renderer').getGlobal('JSON').stringify
       global.gc()
       stringify({})
     })
@@ -506,60 +506,60 @@ describe('remote module', () => {
     const print = path.join(fixtures, 'print_name.js')
 
     remotely.it(print)('preserves NaN', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       expect(printName.getNaN()).to.be.NaN()
       expect(printName.echo(NaN)).to.be.NaN()
     })
 
     remotely.it(print)('preserves Infinity', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       expect(printName.getInfinity()).to.equal(Infinity)
       expect(printName.echo(Infinity)).to.equal(Infinity)
     })
 
     remotely.it(print)('keeps its constructor name for objects', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       const buf = Buffer.from('test')
       expect(printName.print(buf)).to.equal('Buffer')
     })
 
     remotely.it(print)('supports instanceof Boolean', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       const obj = Boolean(true)
       expect(printName.print(obj)).to.equal('Boolean')
       expect(printName.echo(obj)).to.deep.equal(obj)
     })
 
     remotely.it(print)('supports instanceof Number', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       const obj = Number(42)
       expect(printName.print(obj)).to.equal('Number')
       expect(printName.echo(obj)).to.deep.equal(obj)
     })
 
     remotely.it(print)('supports instanceof String', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       const obj = String('Hello World!')
       expect(printName.print(obj)).to.equal('String')
       expect(printName.echo(obj)).to.deep.equal(obj)
     })
 
     remotely.it(print)('supports instanceof Date', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       const now = new Date()
       expect(printName.print(now)).to.equal('Date')
       expect(printName.echo(now)).to.deep.equal(now)
     })
 
     remotely.it(print)('supports instanceof RegExp', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       const regexp = RegExp('.*')
       expect(printName.print(regexp)).to.equal('RegExp')
       expect(printName.echo(regexp)).to.deep.equal(regexp)
     })
 
     remotely.it(print)('supports instanceof Buffer', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       const buffer = Buffer.from('test')
       expect(buffer.equals(printName.echo(buffer))).to.be.true()
 
@@ -571,7 +571,7 @@ describe('remote module', () => {
     })
 
     remotely.it(print)('supports instanceof ArrayBuffer', (print: string) => {
-      const printName = require('../renderer').require(print)
+      const printName = require('./renderer').require(print)
       const buffer = new ArrayBuffer(8)
       const view = new DataView(buffer)
 
@@ -594,7 +594,7 @@ describe('remote module', () => {
 
     arrayTests.forEach(([arrayType, values]) => {
       remotely.it(print, arrayType, values)(`supports instanceof ${arrayType}`, (print: string, arrayType: string, values: number[]) => {
-        const printName = require('../renderer').require(print)
+        const printName = require('./renderer').require(print)
         expect([...printName.typedArray(arrayType, values)]).to.deep.equal(values)
 
         const int8values = new ((window as any)[arrayType])(values)
@@ -605,7 +605,7 @@ describe('remote module', () => {
 
     describe('constructing a Uint8Array', () => {
       remotely.it()('does not crash', () => {
-        const RUint8Array = require('../renderer').getGlobal('Uint8Array')
+        const RUint8Array = require('./renderer').getGlobal('Uint8Array')
         new RUint8Array() // eslint-disable-line
       })
     })
@@ -615,13 +615,13 @@ describe('remote module', () => {
     const remotely = makeRemotely(makeWindow())
 
     remotely.it(fixtures)('can be used as promise in each side', async (fixtures: string) => {
-      const promise = require('../renderer').require(require('path').join(fixtures, 'promise.js'))
+      const promise = require('./renderer').require(require('path').join(fixtures, 'promise.js'))
       const value = await promise.twicePromise(Promise.resolve(1234))
       expect(value).to.equal(2468)
     })
 
     remotely.it(fixtures)('handles rejections via catch(onRejected)', async (fixtures: string) => {
-      const promise = require('electron').remote.require(require('path').join(fixtures, 'module', 'rejected-promise.js'))
+      const promise = require('./renderer').require(require('path').join(fixtures, 'rejected-promise.js'))
       const error = await new Promise<Error>(resolve => {
         promise.reject(Promise.resolve(1234)).catch(resolve)
       })
@@ -629,7 +629,7 @@ describe('remote module', () => {
     })
 
     remotely.it(fixtures)('handles rejections via then(onFulfilled, onRejected)', async (fixtures: string) => {
-      const promise = require('electron').remote.require(require('path').join(fixtures, 'module', 'rejected-promise.js'))
+      const promise = require('./renderer').require(require('path').join(fixtures, 'rejected-promise.js'))
       const error = await new Promise<Error>(resolve => {
         promise.reject(Promise.resolve(1234)).then(() => {}, resolve)
       })
@@ -643,7 +643,7 @@ describe('remote module', () => {
       process.once('unhandledRejection', onUnhandledRejection)
 
       remotely(async (fixtures: string) => {
-        const promise = require('electron').remote.require(require('path').join(fixtures, 'module', 'unhandled-rejection.js'))
+        const promise = require('./renderer').require(require('path').join(fixtures, 'unhandled-rejection.js'))
         return new Promise((resolve, reject) => {
           promise.reject().then(() => {
             reject(new Error('Promise was not rejected'))
@@ -665,7 +665,7 @@ describe('remote module', () => {
 
     it('emits unhandled rejection events in the renderer process', (done) => {
       remotely((module: string) => new Promise((resolve, reject) => {
-        const promise = require('electron').remote.require(module)
+        const promise = require('./renderer').require(module)
 
         window.addEventListener('unhandledrejection', function handler (event) {
           event.preventDefault()
@@ -676,7 +676,7 @@ describe('remote module', () => {
         promise.reject().then(() => {
           reject(new Error('Promise was not rejected'))
         })
-      }), path.join(fixtures, 'module', 'unhandled-rejection.js')).then(
+      }), path.join(fixtures, 'unhandled-rejection.js')).then(
         (message) => {
           try {
             expect(message).to.equal('rejected')
@@ -713,7 +713,7 @@ describe('remote module', () => {
 
     it('can return same object with different getters', async () => {
       const equal = await remotely(() => {
-        const remote = require('../renderer')
+        const remote = require('./renderer')
         const contents1 = remote.getCurrentWindow().webContents
         const contents2 = remote.getCurrentWebContents()
         return contents1 === contents2
@@ -726,17 +726,17 @@ describe('remote module', () => {
     const remotely = makeRemotely(makeWindow())
 
     remotely.it(fixtures)('can get methods', (fixtures: string) => {
-      const { base } = require('../renderer').require(require('path').join(fixtures, 'class.js'))
+      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
       expect(base.method()).to.equal('method')
     })
 
     remotely.it(fixtures)('can get properties', (fixtures: string) => {
-      const { base } = require('../renderer').require(require('path').join(fixtures, 'class.js'))
+      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
       expect(base.readonly).to.equal('readonly')
     })
 
     remotely.it(fixtures)('can change properties', (fixtures: string) => {
-      const { base } = require('../renderer').require(require('path').join(fixtures, 'class.js'))
+      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
       expect(base.value).to.equal('old')
       base.value = 'new'
       expect(base.value).to.equal('new')
@@ -744,13 +744,13 @@ describe('remote module', () => {
     })
 
     remotely.it(fixtures)('has unenumerable methods', (fixtures: string) => {
-      const { base } = require('../renderer').require(require('path').join(fixtures, 'class.js'))
+      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
       expect(base).to.not.have.ownProperty('method')
       expect(Object.getPrototypeOf(base)).to.have.ownProperty('method')
     })
 
     remotely.it(fixtures)('keeps prototype chain in derived class', (fixtures: string) => {
-      const { derived } = require('../renderer').require(require('path').join(fixtures, 'class.js'))
+      const { derived } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
       expect(derived.method()).to.equal('method')
       expect(derived.readonly).to.equal('readonly')
       expect(derived).to.not.have.ownProperty('method')
@@ -760,7 +760,7 @@ describe('remote module', () => {
     })
 
     remotely.it(fixtures)('is referenced by methods in prototype chain', (fixtures: string) => {
-      let { derived } = require('../renderer').require(require('path').join(fixtures, 'class.js'))
+      let { derived } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
       const method = derived.method
       derived = null
       global.gc()
@@ -772,14 +772,14 @@ describe('remote module', () => {
     const remotely = makeRemotely(makeWindow())
 
     remotely.it(fixtures)('throws errors from the main process', (fixtures: string) => {
-      const throwFunction = require('../renderer').require(require('path').join(fixtures, 'exception.js'))
+      const throwFunction = require('./renderer').require(require('path').join(fixtures, 'exception.js'))
       expect(() => {
         throwFunction()
       }).to.throw(/undefined/)
     })
 
     remotely.it(fixtures)('tracks error cause', (fixtures: string) => {
-      const throwFunction = require('../renderer').require(require('path').join(fixtures, 'exception.js'))
+      const throwFunction = require('./renderer').require(require('path').join(fixtures, 'exception.js'))
       try {
         throwFunction(new Error('error from main'))
         expect.fail()
