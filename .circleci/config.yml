@@ -1,0 +1,48 @@
+step-restore-cache: &step-restore-cache
+  restore_cache:
+    keys:
+      - v1-dependencies-{{ arch }}-{{ checksum "yarn.lock" }}
+      - v1-dependencies-{{ arch }}
+
+steps-test: &steps-test
+  steps:
+    - checkout
+    - *step-restore-cache
+    - run: yarn
+    - save_cache:
+        paths:
+          - node_modules
+        key: v1-dependencies-{{ arch }}-{{ checksum "yarn.lock" }}
+    - run: yarn tsc
+    - run: yarn test:ci
+    - store_test_results:
+        path: test-results
+
+version: 2.1
+jobs:
+  test:
+    docker:
+      - image: circleci/node:10-browsers
+    <<: *steps-test
+
+  release:
+    docker:
+      - image: circleci/node:10.15-browsers
+    steps:
+      - checkout
+      - *step-restore-cache
+      - run: yarn
+      - run: npx semantic-release
+workflows:
+  version: 2
+  test_and_release:
+    jobs:
+      - test
+# Disabled until we're ready for release.
+#      - release:
+#          requires:
+#            - test
+#          filters:
+#            branches:
+#              only:
+#                - master

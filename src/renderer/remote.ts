@@ -362,6 +362,7 @@ export function getGlobal<T = any> (name: string): T {
 
 // Get the process object in browser.
 Object.defineProperty(exports, 'process', {
+  enumerable: true,
   get: () => exports.getGlobal('process')
 })
 

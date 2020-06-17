@@ -6,7 +6,7 @@ declare namespace NodeJS {
     createDoubleIDWeakMap(): any;
     createIDWeakMap(): any;
     addRemoteObjectRef(contextId: string, id: number): void;
-    setRemoteCallbackFreer(fn: Function, contextId: string, id: number, sender: any): void
+    setRemoteCallbackFreer(fn: Function, frameId: number, contextId: string, id: number, sender: any): void
     setRemoteObjectFreer(object: any, contextId: string, id: number): void
   }
 

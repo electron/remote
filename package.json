@@ -1,11 +1,26 @@
 {
-  "name": "electron-remote",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@electron/remote",
+  "version": "0.0.1",
+  "main": "dist/main/index.js",
   "license": "MIT",
-  "scripts": {
-    "test": "electron spec-main"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/electron/remote"
   },
+  "scripts": {
+    "prepublishOnly": "tsc",
+    "test": "electron test --extension=ts --require=ts-node/register --exit --js-flags=--expose_gc",
+    "test:ci": "yarn test --reporter=mocha-multi-reporters --reporter-options=configFile=.circleci/mocha-reporter-config.json",
+    "test2": "electron spec-main"
+  },
+  "files": [
+    "README.md",
+    "package.json",
+    "index.js",
+    "main/index.js",
+    "renderer/index.js",
+    "dist"
+  ],
   "dependencies": {
     "typescript": "^3.8.0"
   },
@@ -22,6 +37,8 @@
     "dirty-chai": "^2.0.1",
     "electron": ">= 10.0.0-beta.1",
     "mocha": "^5.2.0",
+    "mocha-junit-reporter": "^1.23.3",
+    "mocha-multi-reporters": "^1.1.7",
     "ts-node": "^8.10.2",
     "walkdir": "^0.4.1",
     "yargs": "^15.3.1"
