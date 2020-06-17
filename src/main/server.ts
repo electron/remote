@@ -256,7 +256,7 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
         const callIntoRenderer = function (this: any, ...args: any[]) {
           let succeed = false
           if (!sender.isDestroyed()) {
-            succeed = (sender as any)._sendToFrameInternal(frameId, 'ELECTRON_RENDERER_CALLBACK', contextId, meta.id, valueToMeta(sender, contextId, args))
+            succeed = sender.sendToFrame(frameId, 'ELECTRON_RENDERER_CALLBACK', contextId, meta.id, valueToMeta(sender, contextId, args)) as any as boolean;
           }
           if (!succeed) {
             removeRemoteListenersAndLogWarning(this, callIntoRenderer)
