@@ -3,13 +3,27 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "test": "electron spec-main"
+  },
   "dependencies": {
     "typescript": "^3.8.0"
   },
   "peerDependencies": {
-    "electron": ">= 10.x"
+    "electron": ">= 10.0.0-beta.1"
   },
   "devDependencies": {
-    "electron": ">= 10.x"
+    "@types/chai": "^4.2.11",
+    "@types/chai-as-promised": "^7.1.2",
+    "@types/dirty-chai": "^2.0.2",
+    "@types/mocha": "^7.0.2",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "dirty-chai": "^2.0.1",
+    "electron": ">= 10.0.0-beta.1",
+    "mocha": "^5.2.0",
+    "ts-node": "^8.10.2",
+    "walkdir": "^0.4.1",
+    "yargs": "^15.3.1"
   }
 }
