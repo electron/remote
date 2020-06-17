@@ -7,9 +7,9 @@
     "typescript": "^3.8.0"
   },
   "peerDependencies": {
-    "electron": ">= 8.x"
+    "electron": ">= 10.x"
   },
   "devDependencies": {
-    "electron": ">= 8.x"
+    "electron": ">= 10.x"
   }
 }
