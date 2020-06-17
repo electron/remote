@@ -3,11 +3,6 @@ declare namespace NodeJS {
     getHiddenValue<T>(obj: any, key: string): T;
     setHiddenValue<T>(obj: any, key: string, value: T): void;
     deleteHiddenValue(obj: any, key: string): void;
-    createDoubleIDWeakMap(): any;
-    createIDWeakMap(): any;
-    addRemoteObjectRef(contextId: string, id: number): void;
-    setRemoteCallbackFreer(fn: Function, frameId: number, contextId: string, id: number, sender: any): void
-    setRemoteObjectFreer(object: any, contextId: string, id: number): void
   }
 
   interface EventBinding {
