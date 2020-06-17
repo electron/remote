@@ -5,7 +5,6 @@ import type { MetaTypeFromRenderer, ObjectMember, MetaType, ObjProtoDescriptor }
 import { ipcMain, WebContents, IpcMainEvent, app } from 'electron'
 
 const v8Util = process.electronBinding('v8_util')
-const eventBinding = process.electronBinding('event')
 const { NativeImage } = process.electronBinding('native_image')
 
 // The internal properties of Function.
@@ -315,7 +314,7 @@ const handleRemoteCommand = function (channel: string, handler: (event: IpcMainE
 }
 
 const emitCustomEvent = function (contents: WebContents, eventName: string, ...args: any[]) {
-  const event = eventBinding.createWithSender(contents)
+  const event = { sender: contents, returnValue: undefined as any, defaultPrevented: false }
 
   app.emit(eventName, event, contents, ...args)
   contents.emit(eventName, event, ...args)
