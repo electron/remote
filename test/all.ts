@@ -647,7 +647,8 @@ describe('remote module', () => {
   })
 
   describe('remote object in renderer', () => {
-    const remotely = makeRemotely(makeWindow())
+    const win = makeWindow()
+    const remotely = makeRemotely(win)
 
     remotely.it(fixtures)('can change its properties', (fixtures: string) => {
       const module = require('path').join(fixtures, 'property.js')
@@ -710,6 +711,15 @@ describe('remote module', () => {
       const stringify = require('./renderer').getGlobal('JSON').stringify
       global.gc()
       stringify({})
+    })
+
+    it('can handle objects without constructors', async () => {
+      win().webContents.once('remote-get-global', (event) => {
+        class Foo { bar () { return 'bar'; } }
+        Foo.prototype.constructor = undefined as any
+        event.returnValue = new Foo()
+      })
+      expect(await remotely(() => require('electron').remote.getGlobal('test').bar())).to.equal('bar')
     })
   })
 
