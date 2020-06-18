@@ -24,7 +24,8 @@ export class CallbacksRegistry {
       const location = match[1]
       if (location.includes('(native)')) continue
       if (location.includes('(<anonymous>)')) continue
-      if (location.includes('electron-remote/dist')) continue
+      if (location.includes('callbacks-registry.js')) continue
+      if (location.includes('remote.js')) continue
       if (location.includes('@electron/remote/dist')) continue
 
       const ref = /([^/^)]*)\)?$/gi.exec(location)
