@@ -7,7 +7,7 @@ process.
 
 > ⚠️ **Warning!** This module has [many subtle
 > pitfalls][remote-considered-harmful]. There is almost always a better way to
-> accomplish your task than using this module.
+> accomplish your task than using this module. For example, [ipcRenderer.invoke](https://www.electronjs.org/docs/api/ipc-renderer#ipcrendererinvokechannel-args) can serve many common use cases.
 
 `@electron/remote` is a replacement for the built-in `remote` module in
 Electron, which is deprecated and will eventually be removed.
