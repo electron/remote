@@ -2,7 +2,7 @@
 import { initialize } from '../src/main'
 import { expect } from 'chai'
 import * as path from 'path'
-import { ipcMain, BrowserWindow, nativeImage, NativeImage } from 'electron'
+import { ipcMain, BrowserWindow, nativeImage, NativeImage, app, WebContents } from 'electron'
 
 
 import { closeAllWindows } from './window-helpers'
@@ -221,89 +221,81 @@ describe('typeUtils serialization/deserialization', () => {
 describe('remote module', () => {
   const fixtures = path.join(__dirname, 'fixtures')
 
-  describe('basic functionality', () => {
+  describe('filtering', () => {
     const w = makeWindow()
     const remotely = makeRemotely(w)
 
-    describe('remote.getGlobal filtering', () => {
-      it('can return custom values', async () => {
-        w().webContents.once('remote-get-global', (event, name) => {
-          event.returnValue = name
-        })
-        expect(await remotely(() => require('./renderer').getGlobal('test'))).to.equal('test')
-      })
+    const emitters = [
+      {name: 'webContents', f: () => w().webContents},
+      {name: 'app', f: () => app}
+    ]
+    for (const {name, f} of emitters) {
+      const emitter = f as any as () => any
+      const returnFirstArg = name === 'app' ? (e: any, _: any, a: any) => e.returnValue = a : (e: any, a: any) => e.returnValue = a
+      const returnConstant = (k: any) => (e: any) => e.returnValue = k
+      const preventDefault = (e: any) => e.preventDefault()
+      describe(name, () => {
+        describe('remote.getGlobal', () => {
+          it('can return custom values', async () => {
+            emitter().once('remote-get-global', returnFirstArg)
+            expect(await remotely(() => require('./renderer').getGlobal('test'))).to.equal('test')
+          })
 
-      it('throws when no returnValue set', async () => {
-        w().webContents.once('remote-get-global', (event) => {
-          event.preventDefault()
+          it('throws when no returnValue set', async () => {
+            emitter().once('remote-get-global', preventDefault)
+            await expect(remotely(() => require('./renderer').getGlobal('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
+          })
         })
-        await expect(remotely(() => require('./renderer').getGlobal('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
-      })
-    })
 
-    describe('remote.getBuiltin filtering', () => {
-      it('can return custom values', async () => {
-        w().webContents.once('remote-get-builtin', (event, name) => {
-          event.returnValue = name
-        })
-        expect(await remotely(() => (require('./renderer') as any).getBuiltin('test'))).to.equal('test')
-      })
+        describe('remote.getBuiltin', () => {
+          it('can return custom values', async () => {
+            emitter().once('remote-get-builtin', returnFirstArg)
+            expect(await remotely(() => (require('./renderer') as any).getBuiltin('test'))).to.equal('test')
+          })
 
-      it('throws when no returnValue set', async () => {
-        w().webContents.once('remote-get-builtin', (event) => {
-          event.preventDefault()
+          it('throws when no returnValue set', async () => {
+            emitter().once('remote-get-builtin', preventDefault)
+            await expect(remotely(() => (require('./renderer') as any).getBuiltin('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
+          })
         })
-        await expect(remotely(() => (require('./renderer') as any).getBuiltin('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
-      })
-    })
 
-    describe('remote.require filtering', () => {
-      it('can return custom values', async () => {
-        w().webContents.once('remote-require', (event, name) => {
-          event.returnValue = name
-        })
-        expect(await remotely(() => require('./renderer').require('test'))).to.equal('test')
-      })
+        describe('remote.require', () => {
+          it('can return custom values', async () => {
+            emitter().once('remote-require', returnFirstArg)
+            expect(await remotely(() => require('./renderer').require('test'))).to.equal('test')
+          })
 
-      it('throws when no returnValue set', async () => {
-        w().webContents.once('remote-require', (event) => {
-          event.preventDefault()
+          it('throws when no returnValue set', async () => {
+            emitter().once('remote-require', preventDefault)
+            await expect(remotely(() => require('./renderer').require('test'))).to.eventually.be.rejected(`Blocked remote.require('test')`)
+          })
         })
-        await expect(remotely(() => require('./renderer').require('test'))).to.eventually.be.rejected(`Blocked remote.require('test')`)
-      })
-    })
 
-    describe('remote.getCurrentWindow filtering', () => {
-      it('can return custom value', async () => {
-        w().webContents.once('remote-get-current-window', (e) => {
-          e.returnValue = 'some window'
-        })
-        expect(await remotely(() => require('./renderer').getCurrentWindow())).to.equal('some window')
-      })
+        describe('remote.getCurrentWindow', () => {
+          it('can return custom value', async () => {
+            emitter().once('remote-get-current-window', returnConstant('some window'))
+            expect(await remotely(() => require('./renderer').getCurrentWindow())).to.equal('some window')
+          })
 
-      it('throws when no returnValue set', async () => {
-        w().webContents.once('remote-get-current-window', (event) => {
-          event.preventDefault()
+          it('throws when no returnValue set', async () => {
+            emitter().once('remote-get-current-window', preventDefault)
+            await expect(remotely(() => require('./renderer').getCurrentWindow())).to.eventually.be.rejected(`Blocked remote.getCurrentWindow()`)
+          })
         })
-        await expect(remotely(() => require('./renderer').getCurrentWindow())).to.eventually.be.rejected(`Blocked remote.getCurrentWindow()`)
-      })
-    })
 
-    describe('remote.getCurrentWebContents filtering', () => {
-      it('can return custom value', async () => {
-        w().webContents.once('remote-get-current-web-contents', (event) => {
-          event.returnValue = 'some web contents'
-        })
-        expect(await remotely(() => require('./renderer').getCurrentWebContents())).to.equal('some web contents')
-      })
+        describe('remote.getCurrentWebContents', () => {
+          it('can return custom value', async () => {
+            emitter().once('remote-get-current-web-contents', returnConstant('some web contents'))
+            expect(await remotely(() => require('./renderer').getCurrentWebContents())).to.equal('some web contents')
+          })
 
-      it('throws when no returnValue set', async () => {
-        w().webContents.once('remote-get-current-web-contents', (event) => {
-          event.preventDefault()
+          it('throws when no returnValue set', async () => {
+            emitter().once('remote-get-current-web-contents', preventDefault)
+            await expect(remotely(() => require('./renderer').getCurrentWebContents())).to.eventually.be.rejected(`Blocked remote.getCurrentWebContents()`)
+          })
         })
-        await expect(remotely(() => require('./renderer').getCurrentWebContents())).to.eventually.be.rejected(`Blocked remote.getCurrentWebContents()`)
       })
-    })
+    }
   })
 
   describe('remote references', () => {
