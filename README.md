@@ -255,6 +255,79 @@ process.
 A `NodeJS.Process` object.  The `process` object in the main process. This is the same as
 `remote.getGlobal('process')` but is cached.
 
+# Overriding exposed objects
+
+Without filtering, `@electron/remote` will provide access to any JavaScript
+object that any renderer requests. In order to control what can be accessed,
+`@electron/remote` provides an opportunity to the app to return a custom result
+for any of `getGlobal`, `require`, `getCurrentWindow`, `getCurrentWebContents`,
+or any of the builtin module properties.
+
+The following events will be emitted first on the `app` Electron module, and
+then on the specific `WebContents` which requested the object. When emitted on
+the `app` module, the first parameter after the `Event` object will be the
+`WebContents` which originated the request. If any handler calls
+`preventDefault`, the request will be denied. If a `returnValue` parameter is
+set on the result, then that value will be returned to the renderer instead of
+the default.
+
+## Events
+
+### Event: 'remote-require'
+
+Returns:
+
+* `event` Event
+* `moduleName` String
+
+Emitted when `remote.require()` is called in the renderer process of `webContents`.
+Calling `event.preventDefault()` will prevent the module from being returned.
+Custom value can be returned by setting `event.returnValue`.
+
+### Event: 'remote-get-global'
+
+Returns:
+
+* `event` Event
+* `globalName` String
+
+Emitted when `remote.getGlobal()` is called in the renderer process of `webContents`.
+Calling `event.preventDefault()` will prevent the global from being returned.
+Custom value can be returned by setting `event.returnValue`.
+
+### Event: 'remote-get-builtin'
+
+Returns:
+
+* `event` Event
+* `moduleName` String
+
+Emitted when `remote.getBuiltin()` is called in the renderer process of
+`webContents`, including when a builtin module is accessed as a property (e.g.
+`require("@electron/remote").BrowserWindow`).
+Calling `event.preventDefault()` will prevent the module from being returned.
+Custom value can be returned by setting `event.returnValue`.
+
+### Event: 'remote-get-current-window'
+
+Returns:
+
+* `event` Event
+
+Emitted when `remote.getCurrentWindow()` is called in the renderer process of `webContents`.
+Calling `event.preventDefault()` will prevent the object from being returned.
+Custom value can be returned by setting `event.returnValue`.
+
+### Event: 'remote-get-current-web-contents'
+
+Returns:
+
+* `event` Event
+
+Emitted when `remote.getCurrentWebContents()` is called in the renderer process of `webContents`.
+Calling `event.preventDefault()` will prevent the object from being returned.
+Custom value can be returned by setting `event.returnValue`.
+
 [rmi]: https://en.wikipedia.org/wiki/Java_remote_method_invocation
 [enumerable-properties]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Enumerability_and_ownership_of_properties
 [remote-considered-harmful]: https://medium.com/@nornagon/electrons-remote-module-considered-harmful-70d69500f31
