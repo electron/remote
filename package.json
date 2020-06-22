@@ -1,6 +1,6 @@
 {
   "name": "@electron/remote",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "main": "renderer/index.js",
   "license": "MIT",
   "repository": {
@@ -35,9 +35,8 @@
   "files": [
     "README.md",
     "package.json",
-    "index.js",
     "main/index.js",
     "renderer/index.js",
-    "dist"
+    "dist/src"
   ]
 }

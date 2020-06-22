@@ -38,11 +38,10 @@ workflows:
   test_and_release:
     jobs:
       - test
-# Disabled until we're ready for release.
-#      - release:
-#          requires:
-#            - test
-#          filters:
-#            branches:
-#              only:
-#                - master
+      - release:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
