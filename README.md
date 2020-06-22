@@ -17,8 +17,8 @@ Electron, which is deprecated and will eventually be removed.
 There are two things you need to do to migrate from the built-in `remote`
 module to `@electron/remote`.
 
-The first is that `@electron/remote` must be initialized in the main process
-before it can be used from the renderer:
+The first is that `@electron/remote/main` must be initialized in the main
+process before it can be used from the renderer:
 
 ```javascript
 // in the main process:
@@ -26,7 +26,7 @@ require('@electron/remote/main').initialize()
 ```
 
 The second is that `require('electron').remote` in the renderer process must be
-replaced with `require('@electron/remote/renderer')`.
+replaced with `require('@electron/remote')`.
 
 ```javascript
 // in the renderer process:
@@ -35,13 +35,13 @@ replaced with `require('@electron/remote/renderer')`.
 const { BrowserWindow } = require('electron').remote
 
 // After
-const { BrowserWindow } = require('@electron/remote/renderer')
+const { BrowserWindow } = require('@electron/remote')
 ```
 
 **Note:** Since this is requiring a module through npm rather than a built-in
 module, if you're using `remote` from a preload script or a sandboxed process,
 you'll need to configure your bundler appropriately to package the code of
-`@electron/remote/renderer` in the preload script.
+`@electron/remote` in the preload script.
 
 **Note:** `@electron/remote` respects the `enableRemoteModule` WebPreferences
 value. You must pass `{ webPreferences: { enableRemoteModule: true } }` to
@@ -63,7 +63,7 @@ similar to Java's [RMI][rmi]. An example of creating a browser window from a
 renderer process:
 
 ```javascript
-const { BrowserWindow } = require('@electron/remote/renderer')
+const { BrowserWindow } = require('@electron/remote')
 let win = new BrowserWindow({ width: 800, height: 600 })
 win.loadURL('https://github.com')
 ```
@@ -141,7 +141,7 @@ exports.withLocalCallback = () => {
 
 ```javascript
 // renderer process
-const mapNumbers = require('@electron/remote/renderer').require('./mapNumbers')
+const mapNumbers = require('@electron/remote').require('./mapNumbers')
 const withRendererCb = mapNumbers.withRendererCallback(x => x + 1)
 const withLocalCb = mapNumbers.withLocalCallback()
 
@@ -160,7 +160,7 @@ For example, the following code seems innocent at first glance. It installs a
 callback for the `close` event on a remote object:
 
 ```javascript
-require('@electron/remote/renderer').getCurrentWindow().on('close', () => {
+require('@electron/remote').getCurrentWindow().on('close', () => {
   // window was closed...
 })
 ```
@@ -184,7 +184,7 @@ The built-in modules in the main process are added as getters in the `remote`
 module, so you can use them directly like the `electron` module.
 
 ```javascript
-const app = require('@electron/remote/renderer').app
+const app = require('@electron/remote').app
 console.log(app)
 ```
 
@@ -214,7 +214,7 @@ project/
 
 ```js
 // main process: main/index.js
-const { app } = require('@electron/remote/renderer')
+const { app } = require('@electron/remote')
 app.whenReady().then(() => { /* ... */ })
 ```
 
@@ -225,7 +225,7 @@ module.exports = 'bar'
 
 ```js
 // renderer process: renderer/index.js
-const foo = require('@electron/remote/renderer').require('./foo') // bar
+const foo = require('@electron/remote').require('./foo') // bar
 ```
 
 ### `remote.getCurrentWindow()`

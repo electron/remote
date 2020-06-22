@@ -1,7 +1,7 @@
 {
   "name": "@electron/remote",
   "version": "0.0.1",
-  "main": "dist/main/index.js",
+  "main": "renderer/index.js",
   "license": "MIT",
   "repository": {
     "type": "git",
