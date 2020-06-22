@@ -294,7 +294,10 @@ const handleRemoteCommand = function (channel: string, handler: (event: IpcMainE
   ipcMain.on(channel, (event, contextId: string, ...args: any[]) => {
     let returnValue: MetaType | null | void
     if (!isRemoteModuleEnabled(event.sender)) {
-      event.returnValue = null
+      event.returnValue = {
+        type: 'exception',
+        value: valueToMeta(event.sender, contextId, new Error('@electron/remote is disabled for this WebContents. Set {enableRemoteModule: true} in WebPreferences to enable it.'))
+      }
       return
     }
 
