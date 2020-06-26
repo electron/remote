@@ -39,9 +39,10 @@ const { BrowserWindow } = require('@electron/remote')
 ```
 
 **Note:** Since this is requiring a module through npm rather than a built-in
-module, if you're using `remote` from a preload script or a sandboxed process,
-you'll need to configure your bundler appropriately to package the code of
-`@electron/remote` in the preload script.
+module, if you're using `remote` from a sandboxed process, you'll need to
+configure your bundler appropriately to package the code of `@electron/remote`
+in the preload script. Of course, [using `@electron/remote` makes the sandbox
+much less effective][remote-considered-harmful].
 
 **Note:** `@electron/remote` respects the `enableRemoteModule` WebPreferences
 value. You must pass `{ webPreferences: { enableRemoteModule: true } }` to
