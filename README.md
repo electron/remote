@@ -14,10 +14,16 @@ Electron, which is deprecated and will eventually be removed.
 
 ## Migrating from `remote`
 
-There are two things you need to do to migrate from the built-in `remote`
+There are three things you need to do to migrate from the built-in `remote`
 module to `@electron/remote`.
 
-The first is that `@electron/remote/main` must be initialized in the main
+First, you need to install it from NPM:
+
+```shell
+$ npm install --save @electron/remote
+```
+
+Second, `@electron/remote/main` must be initialized in the main
 process before it can be used from the renderer:
 
 ```javascript
@@ -25,7 +31,7 @@ process before it can be used from the renderer:
 require('@electron/remote/main').initialize()
 ```
 
-The second is that `require('electron').remote` in the renderer process must be
+Third, `require('electron').remote` in the renderer process must be
 replaced with `require('@electron/remote')`.
 
 ```javascript
