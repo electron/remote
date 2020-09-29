@@ -3,6 +3,7 @@ import { isPromise, isSerializableObject, serialize, deserialize } from '../comm
 import { MetaTypeFromRenderer, ObjectMember, ObjProtoDescriptor, MetaType } from '../common/types'
 import { BrowserWindow, WebContents, ipcRenderer } from 'electron'
 import { browserModules } from '../common/module-names'
+import { IPC_MESSAGES } from '../common/ipc-messages';
 
 const v8Util = process.electronBinding('v8_util')
 const { hasSwitch } = process.electronBinding('command_line')
@@ -14,7 +15,7 @@ const finalizationRegistry = new (window as any).FinalizationRegistry((id: numbe
   const ref = remoteObjectCache.get(id)
   if (ref !== undefined && ref.deref() === undefined) {
     remoteObjectCache.delete(id)
-    ipcRenderer.send('ELECTRON_BROWSER_DEREFERENCE', contextId, id, 0)
+    ipcRenderer.send(IPC_MESSAGES.BROWSER_DEREFERENCE, contextId, id, 0)
   }
 })
 
@@ -40,7 +41,7 @@ const contextId = v8Util.getHiddenValue<string>(global, 'contextId')
 // sent, we also listen to the "render-view-deleted" event in the main process
 // to guard that situation.
 process.on('exit', () => {
-  const command = 'ELECTRON_BROWSER_CONTEXT_RELEASE'
+  const command = IPC_MESSAGES.BROWSER_CONTEXT_RELEASE
   ipcRenderer.send(command, contextId)
 })
 
@@ -142,9 +143,9 @@ function setObjectMembers (ref: any, object: any, metaId: number, members: Objec
       const remoteMemberFunction = function (this: any, ...args: any[]) {
         let command
         if (this && this.constructor === remoteMemberFunction) {
-          command = 'ELECTRON_BROWSER_MEMBER_CONSTRUCTOR'
+          command = IPC_MESSAGES.BROWSER_MEMBER_CONSTRUCTOR
         } else {
-          command = 'ELECTRON_BROWSER_MEMBER_CALL'
+          command = IPC_MESSAGES.BROWSER_MEMBER_CALL
         }
         const ret = ipcRenderer.sendSync(command, contextId, metaId, member.name, wrapArgs(args))
         return metaToValue(ret)
@@ -164,7 +165,7 @@ function setObjectMembers (ref: any, object: any, metaId: number, members: Objec
       descriptor.configurable = true
     } else if (member.type === 'get') {
       descriptor.get = () => {
-        const command = 'ELECTRON_BROWSER_MEMBER_GET'
+        const command = IPC_MESSAGES.BROWSER_MEMBER_GET
         const meta = ipcRenderer.sendSync(command, contextId, metaId, member.name)
         return metaToValue(meta)
       }
@@ -172,7 +173,7 @@ function setObjectMembers (ref: any, object: any, metaId: number, members: Objec
       if (member.writable) {
         descriptor.set = (value) => {
           const args = wrapArgs([value])
-          const command = 'ELECTRON_BROWSER_MEMBER_SET'
+          const command = IPC_MESSAGES.BROWSER_MEMBER_SET
           const meta = ipcRenderer.sendSync(command, contextId, metaId, member.name, args)
           if (meta != null) metaToValue(meta)
           return value
@@ -202,7 +203,7 @@ function proxyFunctionProperties (remoteMemberFunction: Function, metaId: number
   const loadRemoteProperties = () => {
     if (loaded) return
     loaded = true
-    const command = 'ELECTRON_BROWSER_MEMBER_GET'
+    const command = IPC_MESSAGES.BROWSER_MEMBER_GET
     const meta = ipcRenderer.sendSync(command, contextId, metaId, name)
     setObjectMembers(remoteMemberFunction, remoteMemberFunction, meta.id, meta.members)
   }
@@ -263,9 +264,9 @@ function metaToValue (meta: MetaType): any {
       const remoteFunction = function (this: any, ...args: any[]) {
         let command
         if (this && this.constructor === remoteFunction) {
-          command = 'ELECTRON_BROWSER_CONSTRUCTOR'
+          command = IPC_MESSAGES.BROWSER_CONSTRUCTOR
         } else {
-          command = 'ELECTRON_BROWSER_FUNCTION_CALL'
+          command = IPC_MESSAGES.BROWSER_FUNCTION_CALL
         }
         const obj = ipcRenderer.sendSync(command, contextId, meta.id, wrapArgs(args))
         return metaToValue(obj)
@@ -302,7 +303,7 @@ function handleMessage (channel: string, handler: Function) {
       handler(id, ...args)
     } else {
       // Message sent to an un-exist context, notify the error to main process.
-      ipcRenderer.send('ELECTRON_BROWSER_WRONG_CONTEXT_ERROR', contextId, passedContextId, id)
+      ipcRenderer.send(IPC_MESSAGES.BROWSER_WRONG_CONTEXT_ERROR, contextId, passedContextId, id)
     }
   })
 }
@@ -318,44 +319,44 @@ function getCurrentStack (): string | undefined {
 }
 
 // Browser calls a callback in renderer.
-handleMessage('ELECTRON_RENDERER_CALLBACK', (id: number, args: any) => {
+handleMessage(IPC_MESSAGES.RENDERER_CALLBACK, (id: number, args: any) => {
   callbacksRegistry.apply(id, metaToValue(args))
 })
 
 // A callback in browser is released.
-handleMessage('ELECTRON_RENDERER_RELEASE_CALLBACK', (id: number) => {
+handleMessage(IPC_MESSAGES.RENDERER_RELEASE_CALLBACK, (id: number) => {
   callbacksRegistry.remove(id)
 })
 
 exports.require = (module: string) => {
-  const command = 'ELECTRON_BROWSER_REQUIRE'
+  const command = IPC_MESSAGES.BROWSER_REQUIRE
   const meta = ipcRenderer.sendSync(command, contextId, module, getCurrentStack())
   return metaToValue(meta)
 }
 
 // Alias to remote.require('electron').xxx.
 export function getBuiltin (module: string) {
-  const command = 'ELECTRON_BROWSER_GET_BUILTIN'
+  const command = IPC_MESSAGES.BROWSER_GET_BUILTIN
   const meta = ipcRenderer.sendSync(command, contextId, module, getCurrentStack())
   return metaToValue(meta)
 }
 
 export function getCurrentWindow (): BrowserWindow {
-  const command = 'ELECTRON_BROWSER_CURRENT_WINDOW'
+  const command = IPC_MESSAGES.BROWSER_GET_CURRENT_WINDOW
   const meta = ipcRenderer.sendSync(command, contextId, getCurrentStack())
   return metaToValue(meta)
 }
 
 // Get current WebContents object.
 export function getCurrentWebContents (): WebContents {
-  const command = 'ELECTRON_BROWSER_CURRENT_WEB_CONTENTS'
+  const command = IPC_MESSAGES.BROWSER_GET_CURRENT_WEB_CONTENTS
   const meta = ipcRenderer.sendSync(command, contextId, getCurrentStack())
   return metaToValue(meta)
 }
 
 // Get a global object in browser.
 export function getGlobal<T = any> (name: string): T {
-  const command = 'ELECTRON_BROWSER_GLOBAL'
+  const command = IPC_MESSAGES.BROWSER_GET_GLOBAL
   const meta = ipcRenderer.sendSync(command, contextId, name, getCurrentStack())
   return metaToValue(meta)
 }
