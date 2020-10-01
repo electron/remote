@@ -3,6 +3,7 @@ import objectsRegistry from './objects-registry'
 import { isPromise, isSerializableObject, deserialize, serialize } from '../common/type-utils'
 import type { MetaTypeFromRenderer, ObjectMember, MetaType, ObjProtoDescriptor } from '../common/types'
 import { ipcMain, WebContents, IpcMainEvent, app } from 'electron'
+import { IPC_MESSAGES } from '../common/ipc-messages';
 
 const v8Util = process.electronBinding('v8_util')
 const { NativeImage } = process.electronBinding('native_image')
@@ -25,7 +26,7 @@ const finalizationRegistry = new (globalThis as any).FinalizationRegistry((fi: F
   const ref = rendererFunctionCache.get(mapKey)
   if (ref !== undefined && ref.deref() === undefined) {
     rendererFunctionCache.delete(mapKey)
-    if (!fi.webContents.isDestroyed()) { fi.webContents.sendToFrame(fi.frameId, 'ELECTRON_RENDERER_RELEASE_CALLBACK', fi.id[0], fi.id[1]); }
+    if (!fi.webContents.isDestroyed()) { fi.webContents.sendToFrame(fi.frameId, IPC_MESSAGES.RENDERER_RELEASE_CALLBACK, fi.id[0], fi.id[1]); }
   }
 })
 
@@ -256,7 +257,7 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
         const callIntoRenderer = function (this: any, ...args: any[]) {
           let succeed = false
           if (!sender.isDestroyed()) {
-            succeed = sender.sendToFrame(frameId, 'ELECTRON_RENDERER_CALLBACK', contextId, meta.id, valueToMeta(sender, contextId, args)) as any as boolean;
+            succeed = sender.sendToFrame(frameId, IPC_MESSAGES.RENDERER_CALLBACK, contextId, meta.id, valueToMeta(sender, contextId, args)) as any as boolean;
           }
           if (!succeed) {
             removeRemoteListenersAndLogWarning(this, callIntoRenderer)
@@ -336,7 +337,7 @@ export function initialize() {
   if (initialized)
     throw new Error('electron-remote has already been initialized')
   initialized = true
-  handleRemoteCommand('ELECTRON_BROWSER_WRONG_CONTEXT_ERROR', function (event, contextId, passedContextId, id) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_WRONG_CONTEXT_ERROR, function (event, contextId, passedContextId, id) {
     const objectId: [string, number] = [passedContextId, id]
     const cachedFunction = getCachedRendererFunction(objectId)
     if (cachedFunction === undefined) {
@@ -346,7 +347,7 @@ export function initialize() {
     removeRemoteListenersAndLogWarning(event.sender, cachedFunction)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_REQUIRE', function (event, contextId, moduleName, stack) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_REQUIRE, function (event, contextId, moduleName, stack) {
     logStack(event.sender, `remote.require('${moduleName}')`, stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-require', moduleName)
 
@@ -361,7 +362,7 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_GET_BUILTIN', function (event, contextId, moduleName, stack) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_GET_BUILTIN, function (event, contextId, moduleName, stack) {
     logStack(event.sender, `remote.getBuiltin('${moduleName}')`, stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-get-builtin', moduleName)
 
@@ -376,7 +377,7 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_GLOBAL', function (event, contextId, globalName, stack) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_GET_GLOBAL, function (event, contextId, globalName, stack) {
     logStack(event.sender, `remote.getGlobal('${globalName}')`, stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-get-global', globalName)
 
@@ -391,7 +392,7 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_CURRENT_WINDOW', function (event, contextId, stack) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_GET_CURRENT_WINDOW, function (event, contextId, stack) {
     logStack(event.sender, 'remote.getCurrentWindow()', stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-get-current-window')
 
@@ -406,7 +407,7 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_CURRENT_WEB_CONTENTS', function (event, contextId, stack) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_GET_CURRENT_WEB_CONTENTS, function (event, contextId, stack) {
     logStack(event.sender, 'remote.getCurrentWebContents()', stack)
     const customEvent = emitCustomEvent(event.sender, 'remote-get-current-web-contents')
 
@@ -421,7 +422,7 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, customEvent.returnValue)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_CONSTRUCTOR', function (event, contextId, id, args) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_CONSTRUCTOR, function (event, contextId, id, args) {
     args = unwrapArgs(event.sender, event.frameId, contextId, args)
     const constructor = objectsRegistry.get(id)
 
@@ -432,7 +433,7 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, new constructor(...args))
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_FUNCTION_CALL', function (event, contextId, id, args) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_FUNCTION_CALL, function (event, contextId, id, args) {
     args = unwrapArgs(event.sender, event.frameId, contextId, args)
     const func = objectsRegistry.get(id)
 
@@ -449,7 +450,7 @@ export function initialize() {
     }
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_MEMBER_CONSTRUCTOR', function (event, contextId, id, method, args) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_MEMBER_CONSTRUCTOR, function (event, contextId, id, method, args) {
     args = unwrapArgs(event.sender, event.frameId, contextId, args)
     const object = objectsRegistry.get(id)
 
@@ -460,7 +461,7 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, new object[method](...args))
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_MEMBER_CALL', function (event, contextId, id, method, args) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_MEMBER_CALL, function (event, contextId, id, method, args) {
     args = unwrapArgs(event.sender, event.frameId, contextId, args)
     const object = objectsRegistry.get(id)
 
@@ -477,7 +478,7 @@ export function initialize() {
     }
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_MEMBER_SET', function (event, contextId, id, name, args) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_MEMBER_SET, function (event, contextId, id, name, args) {
     args = unwrapArgs(event.sender, event.frameId, contextId, args)
     const obj = objectsRegistry.get(id)
 
@@ -489,7 +490,7 @@ export function initialize() {
     return null
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_MEMBER_GET', function (event, contextId, id, name) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_MEMBER_GET, function (event, contextId, id, name) {
     const obj = objectsRegistry.get(id)
 
     if (obj == null) {
@@ -499,11 +500,11 @@ export function initialize() {
     return valueToMeta(event.sender, contextId, obj[name])
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_DEREFERENCE', function (event, contextId, id) {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_DEREFERENCE, function (event, contextId, id) {
     objectsRegistry.remove(event.sender, contextId, id)
   })
 
-  handleRemoteCommand('ELECTRON_BROWSER_CONTEXT_RELEASE', (event, contextId) => {
+  handleRemoteCommand(IPC_MESSAGES.BROWSER_CONTEXT_RELEASE, (event, contextId) => {
     objectsRegistry.clear(event.sender, contextId)
     return null
   })
