@@ -3,6 +3,7 @@ import { isPromise, isSerializableObject, serialize, deserialize } from '../comm
 import { MetaTypeFromRenderer, ObjectMember, ObjProtoDescriptor, MetaType } from '../common/types'
 import { BrowserWindow, WebContents, ipcRenderer } from 'electron'
 import { browserModules } from '../common/module-names'
+import { getElectronBinding } from '../common/get-electron-binding'
 import { IPC_MESSAGES } from '../common/ipc-messages';
 
 const v8Util = process.electronBinding('v8_util')

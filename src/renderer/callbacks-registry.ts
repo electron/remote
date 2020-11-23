@@ -1,4 +1,5 @@
-const v8Util = process.electronBinding('v8_util')
+import { getElectronBinding } from '../common/get-electron-binding'
+const v8Util = getElectronBinding('v8_util')
 
 export class CallbacksRegistry {
   private nextId: number = 0
