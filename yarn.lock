@@ -1417,10 +1417,10 @@ editor@~1.0.0:
   resolved "https://registry.yarnpkg.com/editor/-/editor-1.0.0.tgz#60c7f87bd62bcc6a894fa8ccd6afb7823a24f742"
   integrity sha1-YMf4e9YrzGqJT6jM1q+3gjok90I=
 
-"electron@>= 10.0.0-beta.1":
-  version "10.0.0-beta.3"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-10.0.0-beta.3.tgz#024725fc8d2becf19c433191b042b98191745629"
-  integrity sha512-Rw+8ReJYxsGMlBsPbiCfOJQgiSoWb8Gbqxe7ckLOE8INqhc2mJ1ivR5sNT+MZT//jVLkawQ61tsLfFvTWLbY4A==
+electron@10.x:
+  version "10.1.6"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-10.1.6.tgz#1b74838fc5f8263dcf198dc16bd6a88b095a59bb"
+  integrity sha512-Wyiq5Fy64KAa51i72m+5zayYKSm9O5lnittUdaElAn3PAzGl3yDifYO2QsXR7k/iKxWVSROOPzf43mXYytL67Q==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^12.0.12"
