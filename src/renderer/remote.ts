@@ -6,9 +6,8 @@ import { browserModules } from '../common/module-names'
 import { getElectronBinding } from '../common/get-electron-binding'
 import { IPC_MESSAGES } from '../common/ipc-messages';
 
-const v8Util = process.electronBinding('v8_util')
-const { hasSwitch } = process.electronBinding('command_line')
-const { NativeImage } = process.electronBinding('native_image')
+const v8Util = getElectronBinding('v8_util')
+const { hasSwitch } = getElectronBinding('command_line')
 
 const callbacksRegistry = new CallbacksRegistry()
 const remoteObjectCache = new Map()
@@ -59,7 +58,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
       }
     }
 
-    if (value instanceof NativeImage) {
+    if (value && value.constructor && value.constructor.name === 'NativeImage') {
       return { type: 'nativeimage', value: serialize(value) }
     } else if (Array.isArray(value)) {
       visited.add(value)
@@ -299,7 +298,12 @@ function metaToError (meta: { type: 'error', value: any, members: ObjectMember[]
 }
 
 function handleMessage (channel: string, handler: Function) {
-  ipcRenderer.on(channel, (_, passedContextId, id, ...args) => {
+  ipcRenderer.on(channel, (event, passedContextId, id, ...args) => {
+    if (event.senderId !== 0) {
+      console.error(`Message ${channel} sent by unexpected WebContents (${event.senderId})`);
+      return;
+    }
+
     if (passedContextId === contextId) {
       handler(id, ...args)
     } else {
