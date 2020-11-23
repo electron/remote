@@ -1,3 +1,5 @@
+import { getElectronBinding } from './get-electron-binding'
+
 export const commonModules = [
   { name: 'clipboard' },
   { name: 'nativeImage' },
@@ -37,7 +39,7 @@ export const browserModules = [
   { name: 'WebContentsView' }
 ].concat(commonModules);
 
-const features = process.electronBinding('features');
+const features = getElectronBinding('features');
 
 if (features.isViewApiEnabled()) {
   browserModules.push(

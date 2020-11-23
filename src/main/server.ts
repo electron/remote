@@ -4,9 +4,9 @@ import { isPromise, isSerializableObject, deserialize, serialize } from '../comm
 import type { MetaTypeFromRenderer, ObjectMember, MetaType, ObjProtoDescriptor } from '../common/types'
 import { ipcMain, WebContents, IpcMainEvent, app } from 'electron'
 import { IPC_MESSAGES } from '../common/ipc-messages';
+import { getElectronBinding } from '../common/get-electron-binding'
 
-const v8Util = process.electronBinding('v8_util')
-const { NativeImage } = process.electronBinding('native_image')
+const v8Util = getElectronBinding('v8_util')
 
 // The internal properties of Function.
 const FUNCTION_PROPERTIES = [
@@ -95,7 +95,7 @@ const valueToMeta = function (sender: WebContents, contextId: string, value: any
       // Recognize certain types of objects.
       if (value instanceof Buffer) {
         type = 'buffer'
-      } else if (value instanceof NativeImage) {
+      } else if (value && value.constructor && value.constructor.name === 'NativeImage') {
         type = 'nativeimage'
       } else if (Array.isArray(value)) {
         type = 'array'
