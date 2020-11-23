@@ -26,7 +26,7 @@ jobs:
       - image: circleci/node:10-browsers
     <<: *steps-test
 
-  test-electron-11.x:
+  test-electron-11:
     docker:
       - image: circleci/node:10-browsers
     environment:
@@ -46,7 +46,7 @@ workflows:
   test_and_release:
     jobs:
       - test
-      - test-electron-11.x
+      - test-electron-11
       - release:
           requires:
             - test
