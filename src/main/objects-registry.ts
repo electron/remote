@@ -1,6 +1,7 @@
 import { WebContents } from 'electron'
+import { getElectronBinding } from '../common/get-electron-binding'
 
-const v8Util = process.electronBinding('v8_util')
+const v8Util = getElectronBinding('v8_util')
 
 const getOwnerKey = (webContents: WebContents, contextId: string) => {
   return `${webContents.id}-${contextId}`
