@@ -9,6 +9,7 @@ export const commonModules = [
 export const browserModules = [
   { name: 'app' },
   { name: 'autoUpdater' },
+  { name: 'BaseWindow' },
   { name: 'BrowserView' },
   { name: 'BrowserWindow' },
   { name: 'contentTracing' },
@@ -30,13 +31,15 @@ export const browserModules = [
   { name: 'protocol' },
   { name: 'screen' },
   { name: 'session' },
+  { name: 'ShareMenu' },
   { name: 'systemPreferences' },
   { name: 'TopLevelWindow' },
   { name: 'TouchBar' },
   { name: 'Tray' },
   { name: 'View' },
   { name: 'webContents' },
-  { name: 'WebContentsView' }
+  { name: 'WebContentsView' },
+  { name: 'webFrameMain' },
 ].concat(commonModules);
 
 const features = getElectronBinding('features');
