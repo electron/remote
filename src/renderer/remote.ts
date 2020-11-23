@@ -6,9 +6,9 @@ import { browserModules } from '../common/module-names'
 import { getElectronBinding } from '../common/get-electron-binding'
 import { IPC_MESSAGES } from '../common/ipc-messages';
 
-const v8Util = process.electronBinding('v8_util')
-const { hasSwitch } = process.electronBinding('command_line')
-const { NativeImage } = process.electronBinding('native_image')
+const v8Util = getElectronBinding('v8_util')
+const { hasSwitch } = getElectronBinding('command_line')
+const { NativeImage } = getElectronBinding('native_image')
 
 const callbacksRegistry = new CallbacksRegistry()
 const remoteObjectCache = new Map()
