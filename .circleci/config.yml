@@ -13,6 +13,7 @@ steps-test: &steps-test
         paths:
           - node_modules
         key: v1-dependencies-{{ arch }}-{{ checksum "yarn.lock" }}
+    - run: if [[ -n "${ELECTRON_VERSION}" ]]; then yarn add "electron@${ELECTRON_VERSION}"; fi
     - run: yarn tsc
     - run: yarn test:ci
     - store_test_results:
@@ -23,6 +24,13 @@ jobs:
   test:
     docker:
       - image: circleci/node:10-browsers
+    <<: *steps-test
+
+  test-electron-11.x:
+    docker:
+      - image: circleci/node:10-browsers
+    environment:
+      ELECTRON_VERSION: 11.x
     <<: *steps-test
 
   release:
@@ -38,6 +46,7 @@ workflows:
   test_and_release:
     jobs:
       - test
+      - test-electron-11.x
       - release:
           requires:
             - test
