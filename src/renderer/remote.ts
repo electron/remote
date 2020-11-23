@@ -86,10 +86,10 @@ function wrapArgs (args: any[], visited = new Set()): any {
             value.then(onFulfilled, onRejected)
           })
         }
-      } else if (v8Util.getHiddenValue(value, 'electronId')) {
+      } else if (v8Util.getHiddenValue(value, '@electronId')) {
         return {
           type: 'remote-object',
-          id: v8Util.getHiddenValue(value, 'electronId')
+          id: v8Util.getHiddenValue(value, '@electronId')
         }
       }
 
@@ -283,7 +283,7 @@ function metaToValue (meta: MetaType): any {
     }
 
     // Track delegate obj's lifetime & tell browser to clean up when object is GCed.
-    v8Util.setHiddenValue(ret, 'electronId', meta.id)
+    v8Util.setHiddenValue(ret, '@electronId', meta.id)
     setCachedRemoteObject(meta.id, ret)
     return ret
   }
