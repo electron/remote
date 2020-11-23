@@ -1,11 +1,10 @@
 import { WebContents } from 'electron'
-import { getElectronBinding } from '../common/get-electron-binding'
-
-const v8Util = getElectronBinding('v8_util')
 
 const getOwnerKey = (webContents: WebContents, contextId: string) => {
   return `${webContents.id}-${contextId}`
 }
+
+const electronIds = new WeakMap<Object, number>();
 
 class ObjectsRegistry {
   private nextId: number = 0
@@ -82,14 +81,14 @@ class ObjectsRegistry {
 
   // Private: Saves the object into storage and assigns an ID for it.
   saveToStorage (object: any) {
-    let id: number = v8Util.getHiddenValue(object, '@electronId')
+    let id = electronIds.get(object)
     if (!id) {
       id = ++this.nextId
       this.storage[id] = {
         count: 0,
         object: object
       }
-      v8Util.setHiddenValue(object, '@electronId', id)
+      electronIds.set(object, id);
     }
     return id
   }
@@ -102,7 +101,7 @@ class ObjectsRegistry {
     }
     pointer.count -= 1
     if (pointer.count === 0) {
-      v8Util.deleteHiddenValue(pointer.object, '@electronId')
+      electronIds.delete(pointer.object);
       delete this.storage[id]
     }
   }

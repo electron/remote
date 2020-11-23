@@ -19,6 +19,9 @@ const finalizationRegistry = new (window as any).FinalizationRegistry((id: numbe
   }
 })
 
+const electronIds = new WeakMap<Object, number>();
+const isReturnValue = new WeakSet<Object>();
+
 function getCachedRemoteObject (id: number) {
   const ref = remoteObjectCache.get(id)
   if (ref !== undefined) {
@@ -86,10 +89,10 @@ function wrapArgs (args: any[], visited = new Set()): any {
             value.then(onFulfilled, onRejected)
           })
         }
-      } else if (v8Util.getHiddenValue(value, '@electronId')) {
+      } else if (electronIds.has(value)) {
         return {
           type: 'remote-object',
-          id: v8Util.getHiddenValue(value, '@electronId')
+          id: electronIds.get(value)
         }
       }
 
@@ -107,7 +110,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
       }
       visited.delete(value)
       return meta
-    } else if (typeof value === 'function' && v8Util.getHiddenValue(value, 'returnValue')) {
+    } else if (typeof value === 'function' && isReturnValue.has(value)) {
       return {
         type: 'function-with-return-value',
         value: valueToMeta(value())
@@ -116,7 +119,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
       return {
         type: 'function',
         id: callbacksRegistry.add(value),
-        location: v8Util.getHiddenValue(value, 'location'),
+        location: callbacksRegistry.getLocation(value),
         length: value.length
       }
     } else {
@@ -283,7 +286,7 @@ function metaToValue (meta: MetaType): any {
     }
 
     // Track delegate obj's lifetime & tell browser to clean up when object is GCed.
-    v8Util.setHiddenValue(ret, '@electronId', meta.id)
+    electronIds.set(ret, meta.id);
     setCachedRemoteObject(meta.id, ret)
     return ret
   }
@@ -375,7 +378,7 @@ Object.defineProperty(exports, 'process', {
 // Create a function that will return the specified value when called in browser.
 export function createFunctionWithReturnValue<T> (returnValue: T): () => T {
   const func = () => returnValue
-  v8Util.setHiddenValue(func, 'returnValue', true)
+  isReturnValue.add(func);
   return func
 }
 
