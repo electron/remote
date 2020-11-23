@@ -51,6 +51,8 @@ function setCachedRendererFunction (id: RendererFunctionId, wc: WebContents, fra
   return value
 }
 
+const locationInfo = new WeakMap<Object, string>();
+
 // Return the description of object's members:
 const getObjectMembers = function (object: any): ObjectMember[] {
   let names = Object.getOwnPropertyNames(object)
@@ -180,7 +182,7 @@ const throwRPCError = function (message: string) {
 }
 
 const removeRemoteListenersAndLogWarning = (sender: any, callIntoRenderer: (...args: any[]) => void) => {
-  const location = v8Util.getHiddenValue(callIntoRenderer, 'location')
+  const location = locationInfo.get(callIntoRenderer);
   let message = 'Attempting to call a function in a renderer window that has been closed or released.' +
     `\nFunction provided here: ${location}`
 
@@ -263,7 +265,7 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
             removeRemoteListenersAndLogWarning(this, callIntoRenderer)
           }
         }
-        v8Util.setHiddenValue(callIntoRenderer, 'location', meta.location)
+        locationInfo.set(callIntoRenderer, meta.location);
         Object.defineProperty(callIntoRenderer, 'length', { value: meta.length })
 
         setCachedRendererFunction(objectId, sender, frameId, callIntoRenderer)
