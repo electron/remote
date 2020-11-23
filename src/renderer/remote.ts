@@ -8,7 +8,6 @@ import { IPC_MESSAGES } from '../common/ipc-messages';
 
 const v8Util = getElectronBinding('v8_util')
 const { hasSwitch } = getElectronBinding('command_line')
-const { NativeImage } = getElectronBinding('native_image')
 
 const callbacksRegistry = new CallbacksRegistry()
 const remoteObjectCache = new Map()
@@ -59,7 +58,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
       }
     }
 
-    if (value instanceof NativeImage) {
+    if (value && value.constructor && value.constructor.name === 'NativeImage') {
       return { type: 'nativeimage', value: serialize(value) }
     } else if (Array.isArray(value)) {
       visited.add(value)
