@@ -26,7 +26,13 @@ const finalizationRegistry = new (globalThis as any).FinalizationRegistry((fi: F
   const ref = rendererFunctionCache.get(mapKey)
   if (ref !== undefined && ref.deref() === undefined) {
     rendererFunctionCache.delete(mapKey)
-    if (!fi.webContents.isDestroyed()) { fi.webContents.sendToFrame(fi.frameId, IPC_MESSAGES.RENDERER_RELEASE_CALLBACK, fi.id[0], fi.id[1]); }
+    if (!fi.webContents.isDestroyed()) {
+      try {
+        fi.webContents.sendToFrame(fi.frameId, IPC_MESSAGES.RENDERER_RELEASE_CALLBACK, fi.id[0], fi.id[1]);
+      } catch (error) {
+        console.warn(`sendToFrame() failed: ${error}`);
+      }
+    }
   }
 })
 
@@ -259,7 +265,11 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
         const callIntoRenderer = function (this: any, ...args: any[]) {
           let succeed = false
           if (!sender.isDestroyed()) {
-            succeed = sender.sendToFrame(frameId, IPC_MESSAGES.RENDERER_CALLBACK, contextId, meta.id, valueToMeta(sender, contextId, args)) as any as boolean;
+            try {
+              succeed = sender.sendToFrame(frameId, IPC_MESSAGES.RENDERER_CALLBACK, contextId, meta.id, valueToMeta(sender, contextId, args)) as any as boolean !== false;
+            } catch (error) {
+              console.warn(`sendToFrame() failed: ${error}`);
+            }
           }
           if (!succeed) {
             removeRemoteListenersAndLogWarning(this, callIntoRenderer)
