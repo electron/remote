@@ -2,7 +2,7 @@
 import { initialize } from '../src/main'
 import { expect } from 'chai'
 import * as path from 'path'
-import { ipcMain, BrowserWindow, nativeImage, NativeImage, app, WebContents } from 'electron'
+import { ipcMain, BrowserWindow, protocol, nativeImage, NativeImage, app, WebContents } from 'electron'
 
 
 import { closeAllWindows } from './window-helpers'
@@ -634,6 +634,16 @@ describe('remote module', () => {
       const { functionWithToStringProperty } = require('./renderer').require(path.join(fixtures, 'to-string-non-function.js'))
       expect(functionWithToStringProperty.toString).to.equal('hello')
     })
+
+    const protocolKeys = Object.getOwnPropertyNames(protocol);
+    remotely.it(protocolKeys)('remote.protocol returns all keys', (protocolKeys: [string]) => {
+      const protocol = require('electron').remote.protocol;
+      const remoteKeys = Object.getOwnPropertyNames(protocol);
+      expect(remoteKeys).to.deep.equal(protocolKeys);
+      for (const key of remoteKeys) {
+       expect(typeof (protocol as any)[key]).to.equal('function');
+      }
+    });
   })
 
   describe('remote object in renderer', () => {
