@@ -2,6 +2,12 @@
   "compilerOptions": {
     "declaration": true,
     "target": "es2019",
+    "lib": [
+      "es2019",
+      "esnext.weakref",
+      "dom",
+      "dom.iterable"
+    ],
     "module": "commonjs",
     "outDir": "./dist",
     "strict": true,

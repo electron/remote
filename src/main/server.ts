@@ -15,13 +15,12 @@ const FUNCTION_PROPERTIES = [
 
 type RendererFunctionId = [string, number] // [contextId, funcId]
 type FinalizerInfo = { id: RendererFunctionId, webContents: WebContents, frameId: number }
-type WeakRef<T> = { deref(): T | undefined }
 type CallIntoRenderer = (...args: any[]) => void
 
 // The remote functions in renderer processes.
 const rendererFunctionCache = new Map<string, WeakRef<CallIntoRenderer>>()
 // eslint-disable-next-line no-undef
-const finalizationRegistry = new (globalThis as any).FinalizationRegistry((fi: FinalizerInfo) => {
+const finalizationRegistry = new FinalizationRegistry((fi: FinalizerInfo) => {
   const mapKey = fi.id[0] + '~' + fi.id[1]
   const ref = rendererFunctionCache.get(mapKey)
   if (ref !== undefined && ref.deref() === undefined) {
@@ -46,7 +45,7 @@ function getCachedRendererFunction (id: RendererFunctionId): CallIntoRenderer | 
 }
 function setCachedRendererFunction (id: RendererFunctionId, wc: WebContents, frameId: number, value: CallIntoRenderer) {
   // eslint-disable-next-line no-undef
-  const wr = new (globalThis as any).WeakRef(value) as WeakRef<CallIntoRenderer>
+  const wr = new WeakRef(value)
   const mapKey = id[0] + '~' + id[1]
   rendererFunctionCache.set(mapKey, wr)
   finalizationRegistry.register(value, {
