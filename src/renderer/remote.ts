@@ -2,7 +2,7 @@ import { CallbacksRegistry } from './callbacks-registry'
 import { isPromise, isSerializableObject, serialize, deserialize } from '../common/type-utils'
 import { MetaTypeFromRenderer, ObjectMember, ObjProtoDescriptor, MetaType } from '../common/types'
 import { BrowserWindow, WebContents, ipcRenderer } from 'electron'
-import { browserModules } from '../common/module-names'
+import { browserModuleNames } from '../common/module-names'
 import { getElectronBinding } from '../common/get-electron-binding'
 import { IPC_MESSAGES } from '../common/ipc-messages';
 
@@ -389,6 +389,5 @@ const addBuiltinProperty = (name: string) => {
   })
 }
 
-browserModules
-  .map((m) => m.name)
+browserModuleNames
   .forEach(addBuiltinProperty)

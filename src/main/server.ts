@@ -199,7 +199,7 @@ const removeRemoteListenersAndLogWarning = (sender: any, callIntoRenderer: (...a
     if (remoteEvents.length > 0) {
       message += `\nRemote event names: ${remoteEvents.join(', ')}`
       remoteEvents.forEach((eventName) => {
-        sender.removeListener(eventName as any, callIntoRenderer)
+        sender.removeListener(eventName, callIntoRenderer)
       })
     }
   }
@@ -288,7 +288,7 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
 }
 
 const isRemoteModuleEnabledImpl = function (contents: WebContents) {
-  const webPreferences = (contents as any).getLastWebPreferences() || {}
+  const webPreferences = contents.getLastWebPreferences() || {}
   return webPreferences.enableRemoteModule != null ? !!webPreferences.enableRemoteModule : false
 }
 
@@ -411,7 +411,7 @@ export function initialize() {
       if (customEvent.defaultPrevented) {
         throw new Error('Blocked remote.getCurrentWindow()')
       } else {
-        customEvent.returnValue = (event.sender as any).getOwnerBrowserWindow()
+        customEvent.returnValue = event.sender.getOwnerBrowserWindow()
       }
     }
 

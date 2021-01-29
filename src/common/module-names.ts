@@ -1,51 +1,52 @@
 import { getElectronBinding } from './get-electron-binding'
 
-export const commonModules = [
-  { name: 'clipboard' },
-  { name: 'nativeImage' },
-  { name: 'shell' },
+export const commonModuleNames = [
+  'clipboard',
+  'nativeImage',
+  'shell',
 ];
 
-export const browserModules = [
-  { name: 'app' },
-  { name: 'autoUpdater' },
-  { name: 'BaseWindow' },
-  { name: 'BrowserView' },
-  { name: 'BrowserWindow' },
-  { name: 'contentTracing' },
-  { name: 'crashReporter' },
-  { name: 'desktopCapturer' },
-  { name: 'dialog' },
-  { name: 'globalShortcut' },
-  { name: 'ipcMain' },
-  { name: 'inAppPurchase' },
-  { name: 'Menu' },
-  { name: 'MenuItem' },
-  { name: 'nativeTheme' },
-  { name: 'net' },
-  { name: 'netLog' },
-  { name: 'MessageChannelMain' },
-  { name: 'Notification' },
-  { name: 'powerMonitor' },
-  { name: 'powerSaveBlocker' },
-  { name: 'protocol' },
-  { name: 'screen' },
-  { name: 'session' },
-  { name: 'ShareMenu' },
-  { name: 'systemPreferences' },
-  { name: 'TopLevelWindow' },
-  { name: 'TouchBar' },
-  { name: 'Tray' },
-  { name: 'View' },
-  { name: 'webContents' },
-  { name: 'WebContentsView' },
-  { name: 'webFrameMain' },
-].concat(commonModules);
+export const browserModuleNames = [
+  'app',
+  'autoUpdater',
+  'BaseWindow',
+  'BrowserView',
+  'BrowserWindow',
+  'contentTracing',
+  'crashReporter',
+  'dialog',
+  'globalShortcut',
+  'ipcMain',
+  'inAppPurchase',
+  'Menu',
+  'MenuItem',
+  'nativeTheme',
+  'net',
+  'netLog',
+  'MessageChannelMain',
+  'Notification',
+  'powerMonitor',
+  'powerSaveBlocker',
+  'protocol',
+  'screen',
+  'session',
+  'ShareMenu',
+  'systemPreferences',
+  'TopLevelWindow',
+  'TouchBar',
+  'Tray',
+  'View',
+  'webContents',
+  'WebContentsView',
+  'webFrameMain',
+].concat(commonModuleNames);
 
 const features = getElectronBinding('features');
 
+if (features.isDesktopCapturerEnabled()) {
+  browserModuleNames.push('desktopCapturer');
+}
+
 if (features.isViewApiEnabled()) {
-  browserModules.push(
-    { name: 'ImageView' }
-  );
+  browserModuleNames.push('ImageView');
 }
