@@ -1,5 +1,4 @@
-import { getElectronBinding } from './get-electron-binding'
-const { nativeImage } = getElectronBinding('native_image');
+import { nativeImage } from 'electron';
 
 export function isPromise (val: any) {
   return (
@@ -35,7 +34,7 @@ const objectMap = function (source: Object, mapper: (value: any) => any) {
   return Object.fromEntries(targetEntries);
 };
 
-function serializeNativeImage (image: any) {
+function serializeNativeImage (image: Electron.NativeImage) {
   const representations = [];
   const scaleFactors = image.getScaleFactors();
 
