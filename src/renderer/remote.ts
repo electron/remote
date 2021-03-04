@@ -7,7 +7,6 @@ import { getElectronBinding } from '../common/get-electron-binding'
 import { IPC_MESSAGES } from '../common/ipc-messages';
 
 const v8Util = getElectronBinding('v8_util')
-const { hasSwitch } = getElectronBinding('command_line')
 
 const callbacksRegistry = new CallbacksRegistry()
 const remoteObjectCache = new Map()
@@ -316,7 +315,7 @@ function handleMessage (channel: string, handler: Function) {
   })
 }
 
-const enableStacks = hasSwitch('enable-api-filtering-logging')
+const enableStacks = process.argv.includes('--enable-api-filtering-logging')
 
 function getCurrentStack (): string | undefined {
   const target = { stack: undefined as string | undefined }
