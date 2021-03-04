@@ -23,6 +23,5 @@ declare namespace NodeJS {
     electronBinding(name: 'event'): EventBinding;
     electronBinding(name: 'v8_util'): V8UtilBinding;
     electronBinding(name: 'features'): FeaturesBinding;
-    electronBinding(name: 'command_line'): Electron.CommandLine;
   }
 }
