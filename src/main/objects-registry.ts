@@ -19,7 +19,7 @@ class ObjectsRegistry {
 
   // Register a new object and return its assigned ID. If the object is already
   // registered then the already assigned ID would be returned.
-  add (webContents: WebContents, contextId: string, obj: any) {
+  add (webContents: WebContents, contextId: string, obj: any): number {
     // Get or assign an ID to the object.
     const id = this.saveToStorage(obj)
 
@@ -41,7 +41,7 @@ class ObjectsRegistry {
   }
 
   // Get an object according to its ID.
-  get (id: number) {
+  get (id: number): any {
     const pointer = this.storage[id]
     if (pointer != null) return pointer.object
   }
@@ -49,7 +49,7 @@ class ObjectsRegistry {
   // Dereference an object according to its ID.
   // Note that an object may be double-freed (cleared when page is reloaded, and
   // then garbage collected in old page).
-  remove (webContents: WebContents, contextId: string, id: number) {
+  remove (webContents: WebContents, contextId: string, id: number): void {
     const ownerKey = getOwnerKey(webContents, contextId)
     const owner = this.owners[ownerKey]
     if (owner && owner.has(id)) {
@@ -69,7 +69,7 @@ class ObjectsRegistry {
   }
 
   // Clear all references to objects refrenced by the WebContents.
-  clear (webContents: WebContents, contextId: string) {
+  clear (webContents: WebContents, contextId: string): void {
     const ownerKey = getOwnerKey(webContents, contextId)
     const owner = this.owners[ownerKey]
     if (!owner) return
@@ -79,8 +79,8 @@ class ObjectsRegistry {
     delete this.owners[ownerKey]
   }
 
-  // Private: Saves the object into storage and assigns an ID for it.
-  saveToStorage (object: any) {
+  // Saves the object into storage and assigns an ID for it.
+  private saveToStorage (object: any): number {
     let id = this.electronIds.get(object)
     if (!id) {
       id = ++this.nextId
@@ -93,8 +93,8 @@ class ObjectsRegistry {
     return id
   }
 
-  // Private: Dereference the object from store.
-  dereference (id: number) {
+  // Dereference the object from store.
+  private dereference (id: number): void {
     const pointer = this.storage[id]
     if (pointer == null) {
       return
@@ -106,8 +106,8 @@ class ObjectsRegistry {
     }
   }
 
-  // Private: Clear the storage when renderer process is destroyed.
-  registerDeleteListener (webContents: WebContents, contextId: string) {
+  // Clear the storage when renderer process is destroyed.
+  private registerDeleteListener (webContents: WebContents, contextId: string): void {
     // contextId => ${processHostId}-${contextCount}
     const processHostId = contextId.split('-')[0]
     const listener = (_: any, deletedProcessHostId: string) => {
