@@ -50,8 +50,8 @@ process.on('exit', () => {
 const IS_REMOTE_PROXY = Symbol('is-remote-proxy')
 
 // Convert the arguments object into an array of meta data.
-function wrapArgs (args: any[], visited = new Set()): any {
-  const valueToMeta = (value: any): any => {
+function wrapArgs (args: any[], visited = new Set()): MetaTypeFromRenderer[] {
+  const valueToMeta = (value: any): MetaTypeFromRenderer => {
     // Check for circular reference.
     if (visited.has(value)) {
       return {
@@ -64,7 +64,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
       return { type: 'nativeimage', value: serialize(value) }
     } else if (Array.isArray(value)) {
       visited.add(value)
-      const meta = {
+      const meta: MetaTypeFromRenderer = {
         type: 'array',
         value: wrapArgs(value, visited)
       }
@@ -91,7 +91,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
       } else if (electronIds.has(value)) {
         return {
           type: 'remote-object',
-          id: electronIds.get(value)
+          id: electronIds.get(value)!
         }
       }
 
@@ -118,7 +118,7 @@ function wrapArgs (args: any[], visited = new Set()): any {
       return {
         type: 'function',
         id: callbacksRegistry.add(value),
-        location: callbacksRegistry.getLocation(value),
+        location: callbacksRegistry.getLocation(value)!,
         length: value.length
       }
     } else {
