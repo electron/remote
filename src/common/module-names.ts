@@ -43,10 +43,10 @@ export const browserModuleNames = [
 
 const features = getElectronBinding('features');
 
-if (features.isDesktopCapturerEnabled()) {
+if (!features || features.isDesktopCapturerEnabled()) {
   browserModuleNames.push('desktopCapturer');
 }
 
-if (features.isViewApiEnabled()) {
+if (!features || features.isViewApiEnabled()) {
   browserModuleNames.push('ImageView');
 }
