@@ -40,6 +40,8 @@
     "package.json",
     "main/index.js",
     "renderer/index.js",
-    "dist/src"
-  ]
+    "dist/src",
+    "index.d.ts"
+  ],
+  "types": "index.d.ts"
 }
