@@ -38,7 +38,7 @@ function getContextId() {
   if (v8Util) {
     return v8Util.getHiddenValue<string>(global, 'contextId')
   } else {
-    throw new Error('Electron v13.0.0-beta.6 required to support sandboxed renderers')
+    throw new Error('Electron >=v13.0.0-beta.6 required to support sandboxed renderers')
   }
 }
 
