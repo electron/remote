@@ -6,8 +6,6 @@ import { browserModuleNames } from '../common/module-names'
 import { getElectronBinding } from '../common/get-electron-binding'
 import { IPC_MESSAGES } from '../common/ipc-messages';
 
-const v8Util = getElectronBinding('v8_util')
-
 const callbacksRegistry = new CallbacksRegistry()
 const remoteObjectCache = new Map()
 const finalizationRegistry = new FinalizationRegistry((id: number) => {
@@ -35,8 +33,17 @@ function setCachedRemoteObject (id: number, value: any) {
   return value
 }
 
+function getContextId() {
+  const v8Util = getElectronBinding('v8_util')
+  if (v8Util) {
+    return v8Util.getHiddenValue<string>(global, 'contextId')
+  } else {
+    throw new Error('Electron >=v13.0.0-beta.6 required to support sandboxed renderers')
+  }
+}
+
 // An unique ID that can represent current context.
-const contextId = v8Util.getHiddenValue<string>(global, 'contextId')
+const contextId = process.contextId || getContextId()
 
 // Notify the main process when current context is going to be released.
 // Note that when the renderer process is destroyed, the message may not be
