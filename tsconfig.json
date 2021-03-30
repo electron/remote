@@ -12,5 +12,6 @@
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true
-  }
+  },
+  "exclude": ["index.d.ts"]
 }
