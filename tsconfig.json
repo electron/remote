@@ -13,5 +13,5 @@
     "strict": true,
     "esModuleInterop": true
   },
-  "exclude": ["index.d.ts"]
+  "exclude": ["index.d.ts", "main", "renderer"]
 }
