@@ -303,9 +303,12 @@ export const isRemoteModuleEnabled = function (contents: WebContents) {
 }
 
 const handleRemoteCommand = function (channel: string, handler: (event: IpcMainEvent, contextId: string, ...args: any[]) => void) {
+  const electronVersion = Number(process.versions.electron?.split(".")?.[0]),
+    checkRemoteModuleEnabled = Number.isNaN(electronVersion) || electronVersion < 14;
+  
   ipcMain.on(channel, (event, contextId: string, ...args: any[]) => {
     let returnValue: MetaType | null | void
-    if (!isRemoteModuleEnabled(event.sender)) {
+    if (checkRemoteModuleEnabled && !isRemoteModuleEnabled(event.sender)) {
       event.returnValue = {
         type: 'exception',
         value: valueToMeta(event.sender, contextId, new Error('@electron/remote is disabled for this WebContents. Set {enableRemoteModule: true} in WebPreferences to enable it.'))
