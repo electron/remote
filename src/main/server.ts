@@ -8,6 +8,11 @@ import { getElectronBinding } from '../common/get-electron-binding'
 
 const v8Util = getElectronBinding('v8_util')
 
+const hasWebPrefsRemoteModuleAPI = (() => {
+  const electronVersion = Number(process.versions.electron?.split(".")?.[0]);
+    return Number.isNaN(electronVersion) || electronVersion < 14
+})()
+
 // The internal properties of Function.
 const FUNCTION_PROPERTIES = [
   'length', 'name', 'arguments', 'caller', 'prototype'
@@ -289,29 +294,41 @@ const unwrapArgs = function (sender: WebContents, frameId: number, contextId: st
 
 const isRemoteModuleEnabledImpl = function (contents: WebContents) {
   const webPreferences = contents.getLastWebPreferences() || {}
-  return webPreferences.enableRemoteModule != null ? !!webPreferences.enableRemoteModule : false
+  return (webPreferences as any).enableRemoteModule != null ? !!(webPreferences as any).enableRemoteModule : false
 }
 
-const isRemoteModuleEnabledCache = new WeakMap()
+const isRemoteModuleEnabledCache = new WeakMap<WebContents, boolean>()
 
 export const isRemoteModuleEnabled = function (contents: WebContents) {
-  if (!isRemoteModuleEnabledCache.has(contents)) {
+  if (hasWebPrefsRemoteModuleAPI && !isRemoteModuleEnabledCache.has(contents)) {
     isRemoteModuleEnabledCache.set(contents, isRemoteModuleEnabledImpl(contents))
   }
 
   return isRemoteModuleEnabledCache.get(contents)
 }
 
+export function permit(contents: WebContents) {
+  if (hasWebPrefsRemoteModuleAPI) {
+    throw new Error("The permit API is available only for electron >= 14.0.0")
+  }
+
+  isRemoteModuleEnabledCache.set(contents, true)
+}
+
 const handleRemoteCommand = function (channel: string, handler: (event: IpcMainEvent, contextId: string, ...args: any[]) => void) {
-  const electronVersion = Number(process.versions.electron?.split(".")?.[0]),
-    checkRemoteModuleEnabled = Number.isNaN(electronVersion) || electronVersion < 14;
-  
   ipcMain.on(channel, (event, contextId: string, ...args: any[]) => {
     let returnValue: MetaType | null | void
-    if (checkRemoteModuleEnabled && !isRemoteModuleEnabled(event.sender)) {
+
+    if (!isRemoteModuleEnabled(event.sender)) {
       event.returnValue = {
         type: 'exception',
-        value: valueToMeta(event.sender, contextId, new Error('@electron/remote is disabled for this WebContents. Set {enableRemoteModule: true} in WebPreferences to enable it.'))
+        value: valueToMeta(event.sender, contextId, new Error(
+          `@electron/remote is disabled for this WebContents. ${
+            hasWebPrefsRemoteModuleAPI
+              ? "Set {enableRemoteModule: true} in WebPreferences"
+              : "Call 'require(\"@electron/remote/main\").permit(webContents)'"
+          } to enable it.`
+        ))
       }
       return
     }
