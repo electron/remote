@@ -30,7 +30,7 @@ process before it can be used from the renderer:
 
 ```javascript
 // in the main process:
-require("@electron/remote/main").initialize();
+require('@electron/remote/main').initialize()
 ```
 
 Third, `require('electron').remote` in the renderer process must be
@@ -40,10 +40,10 @@ replaced with `require('@electron/remote')`.
 // in the renderer process:
 
 // Before
-const { BrowserWindow } = require("electron").remote;
+const { BrowserWindow } = require('electron').remote
 
 // After
-const { BrowserWindow } = require("@electron/remote");
+const { BrowserWindow } = require('@electron/remote')
 ```
 
 **Note:** Since this is requiring a module through npm rather than a built-in
@@ -56,6 +56,7 @@ much less effective][remote-considered-harmful].
 value. You must pass `{ webPreferences: { enableRemoteModule: true } }` to
 the constructor of `BrowserWindow`s that should be granted permission to use
 `@electron/remote`.
+
 
 # API Reference
 
@@ -71,9 +72,9 @@ similar to Java's [RMI][rmi]. An example of creating a browser window from a
 renderer process:
 
 ```javascript
-const { BrowserWindow } = require("@electron/remote");
-let win = new BrowserWindow({ width: 800, height: 600 });
-win.loadURL("https://github.com");
+const { BrowserWindow } = require('@electron/remote')
+let win = new BrowserWindow({ width: 800, height: 600 })
+win.loadURL('https://github.com')
 ```
 
 In order for this to work, you first need to initialize the main-process side
@@ -81,11 +82,10 @@ of the remote module:
 
 ```javascript
 // in the main process:
-require("@electron/remote/main").initialize();
+require('@electron/remote/main').initialize()
 ```
 
 **Note:** In `electron < 14.0.0` the remote module can be disabled for security reasons in the following contexts:
-
 - [`BrowserWindow`](browser-window.md) - by setting the `enableRemoteModule` option to `false`.
 - [`<webview>`](webview-tag.md) - by setting the `enableremotemodule` attribute to `false`.
 
@@ -140,21 +140,21 @@ For instance you can't use a function from the renderer process in an
 ```javascript
 // main process mapNumbers.js
 exports.withRendererCallback = (mapper) => {
-  return [1, 2, 3].map(mapper);
-};
+  return [1, 2, 3].map(mapper)
+}
 
 exports.withLocalCallback = () => {
-  return [1, 2, 3].map((x) => x + 1);
-};
+  return [1, 2, 3].map(x => x + 1)
+}
 ```
 
 ```javascript
 // renderer process
-const mapNumbers = require("@electron/remote").require("./mapNumbers");
-const withRendererCb = mapNumbers.withRendererCallback((x) => x + 1);
-const withLocalCb = mapNumbers.withLocalCallback();
+const mapNumbers = require('@electron/remote').require('./mapNumbers')
+const withRendererCb = mapNumbers.withRendererCallback(x => x + 1)
+const withLocalCb = mapNumbers.withLocalCallback()
 
-console.log(withRendererCb, withLocalCb);
+console.log(withRendererCb, withLocalCb)
 // [undefined, undefined, undefined], [2, 3, 4]
 ```
 
@@ -169,11 +169,9 @@ For example, the following code seems innocent at first glance. It installs a
 callback for the `close` event on a remote object:
 
 ```javascript
-require("@electron/remote")
-  .getCurrentWindow()
-  .on("close", () => {
-    // window was closed...
-  });
+require('@electron/remote').getCurrentWindow().on('close', () => {
+  // window was closed...
+})
 ```
 
 But remember the callback is referenced by the main process until you
@@ -195,8 +193,8 @@ The built-in modules in the main process are added as getters in the `remote`
 module, so you can use them directly like the `electron` module.
 
 ```javascript
-const app = require("@electron/remote").app;
-console.log(app);
+const app = require('@electron/remote').app
+console.log(app)
 ```
 
 ## Methods
@@ -205,7 +203,7 @@ The `remote` module has the following methods:
 
 ### `remote.require(module)`
 
-- `module` String
+* `module` String
 
 Returns `any` - The object returned by `require(module)` in the main process.
 Modules specified by their relative path will resolve relative to the entrypoint
@@ -216,8 +214,8 @@ e.g.
 ```sh
 project/
 ├── main
-│   ├── foo.js
-│   └── index.js
+│   ├── foo.js
+│   └── index.js
 ├── package.json
 └── renderer
     └── index.js
@@ -225,27 +223,25 @@ project/
 
 ```js
 // main process: main/index.js
-const { app } = require("@electron/remote");
-app.whenReady().then(() => {
-  /* ... */
-});
+const { app } = require('@electron/remote')
+app.whenReady().then(() => { /* ... */ })
 ```
 
 ```js
 // some relative module: main/foo.js
-module.exports = "bar";
+module.exports = 'bar'
 ```
 
 ```js
 // renderer process: renderer/index.js
-const foo = require("@electron/remote").require("./foo"); // bar
+const foo = require('@electron/remote').require('./foo') // bar
 ```
 
 ### `remote.getCurrentWindow()`
 
 Returns `BrowserWindow` - The window to which this web page belongs.
 
-**Note:** Do not use `removeAllListeners` on `BrowserWindow`. Use of this can
+**Note:** Do not use `removeAllListeners` on `BrowserWindow`.  Use of this can
 remove all [`blur`](https://developer.mozilla.org/en-US/docs/Web/Events/blur)
 listeners, disable click events on touch bar buttons, and other unintended
 consequences.
@@ -256,7 +252,7 @@ Returns `WebContents` - The web contents of this web page.
 
 ### `remote.getGlobal(name)`
 
-- `name` String
+* `name` String
 
 Returns `any` - The global variable of `name` (e.g. `global[name]`) in the main
 process.
@@ -265,7 +261,7 @@ process.
 
 ### `remote.process` _Readonly_
 
-A `NodeJS.Process` object. The `process` object in the main process. This is the same as
+A `NodeJS.Process` object.  The `process` object in the main process. This is the same as
 `remote.getGlobal('process')` but is cached.
 
 # Overriding exposed objects
@@ -290,8 +286,8 @@ the default.
 
 Returns:
 
-- `event` Event
-- `moduleName` String
+* `event` Event
+* `moduleName` String
 
 Emitted when `remote.require()` is called in the renderer process of `webContents`.
 Calling `event.preventDefault()` will prevent the module from being returned.
@@ -301,8 +297,8 @@ Custom value can be returned by setting `event.returnValue`.
 
 Returns:
 
-- `event` Event
-- `globalName` String
+* `event` Event
+* `globalName` String
 
 Emitted when `remote.getGlobal()` is called in the renderer process of `webContents`.
 Calling `event.preventDefault()` will prevent the global from being returned.
@@ -312,8 +308,8 @@ Custom value can be returned by setting `event.returnValue`.
 
 Returns:
 
-- `event` Event
-- `moduleName` String
+* `event` Event
+* `moduleName` String
 
 Emitted when `remote.getBuiltin()` is called in the renderer process of
 `webContents`, including when a builtin module is accessed as a property (e.g.
@@ -325,7 +321,7 @@ Custom value can be returned by setting `event.returnValue`.
 
 Returns:
 
-- `event` Event
+* `event` Event
 
 Emitted when `remote.getCurrentWindow()` is called in the renderer process of `webContents`.
 Calling `event.preventDefault()` will prevent the object from being returned.
@@ -335,7 +331,7 @@ Custom value can be returned by setting `event.returnValue`.
 
 Returns:
 
-- `event` Event
+* `event` Event
 
 Emitted when `remote.getCurrentWebContents()` is called in the renderer process of `webContents`.
 Calling `event.preventDefault()` will prevent the object from being returned.
