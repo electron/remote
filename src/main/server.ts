@@ -307,9 +307,9 @@ export const isRemoteModuleEnabled = function (contents: WebContents) {
   return isRemoteModuleEnabledCache.get(contents)
 }
 
-export function permit(contents: WebContents) {
+export function enable(contents: WebContents) {
   if (hasWebPrefsRemoteModuleAPI) {
-    throw new Error("The permit API is available only for electron >= 14.0.0")
+    throw new Error("The `enable` API is available only for electron >= 14.0.0")
   }
 
   isRemoteModuleEnabledCache.set(contents, true)
@@ -326,7 +326,7 @@ const handleRemoteCommand = function (channel: string, handler: (event: IpcMainE
           `@electron/remote is disabled for this WebContents. ${
             hasWebPrefsRemoteModuleAPI
               ? "Set {enableRemoteModule: true} in WebPreferences"
-              : "Call 'require(\"@electron/remote/main\").permit(webContents)'"
+              : "Call 'require(\"@electron/remote/main\").enable(webContents)'"
           } to enable it.`
         ))
       }
