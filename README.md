@@ -52,11 +52,12 @@ configure your bundler appropriately to package the code of `@electron/remote`
 in the preload script. Of course, [using `@electron/remote` makes the sandbox
 much less effective][remote-considered-harmful].
 
-**Note:** `@electron/remote` respects the `enableRemoteModule` WebPreferences
+**Note:** In `electron >= 14.0.0`, you must use the new `enable` API to enable the remote module for each desired `WebContents` separately: `require("@electron/remote/main").enable(webContents)`.
+
+In `electron < 14.0.0`, `@electron/remote` respects the `enableRemoteModule` WebPreferences
 value. You must pass `{ webPreferences: { enableRemoteModule: true } }` to
 the constructor of `BrowserWindow`s that should be granted permission to use
 `@electron/remote`.
-
 
 # API Reference
 
@@ -85,7 +86,9 @@ of the remote module:
 require('@electron/remote/main').initialize()
 ```
 
-**Note:** The remote module can be disabled for security reasons in the following contexts:
+**Note:** In `electron >= 14.0.0` the remote module is disabled by default for any `WebContents` instance and is only enabled for specified `WebContents` after explicitly calling `require("@electron/remote/main").enable(webContents)`.
+
+In `electron < 14.0.0` the remote module can be disabled for security reasons in the following contexts:
 - [`BrowserWindow`](browser-window.md) - by setting the `enableRemoteModule` option to `false`.
 - [`<webview>`](webview-tag.md) - by setting the `enableremotemodule` attribute to `false`.
 
@@ -214,8 +217,8 @@ e.g.
 ```sh
 project/
 ├── main
-│   ├── foo.js
-│   └── index.js
+│   ├── foo.js
+│   └── index.js
 ├── package.json
 └── renderer
     └── index.js
