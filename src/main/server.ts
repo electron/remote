@@ -308,9 +308,6 @@ export const isRemoteModuleEnabled = function (contents: WebContents) {
 }
 
 export function enable(contents: WebContents) {
-  if (hasWebPrefsRemoteModuleAPI) {
-    throw new Error("The `enable` API is available only for electron >= 14.0.0")
-  }
 
   isRemoteModuleEnabledCache.set(contents, true)
 }
