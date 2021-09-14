@@ -308,7 +308,6 @@ export const isRemoteModuleEnabled = function (contents: WebContents) {
 }
 
 export function enable(contents: WebContents) {
-
   isRemoteModuleEnabledCache.set(contents, true)
 }
 
