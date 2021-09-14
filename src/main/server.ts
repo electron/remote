@@ -319,11 +319,7 @@ const handleRemoteCommand = function (channel: string, handler: (event: IpcMainE
       event.returnValue = {
         type: 'exception',
         value: valueToMeta(event.sender, contextId, new Error(
-          `@electron/remote is disabled for this WebContents. ${
-            hasWebPrefsRemoteModuleAPI
-              ? "Set {enableRemoteModule: true} in WebPreferences"
-              : "Call 'require(\"@electron/remote/main\").enable(webContents)'"
-          } to enable it.`
+          '@electron/remote is disabled for this WebContents. Call require("@electron/remote/main").enable(webContents) to enable it.'
         ))
       }
       return
