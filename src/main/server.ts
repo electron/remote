@@ -359,8 +359,6 @@ let initialized = false
 export function initialize() {
   if (initialized)
     throw new Error('@electron/remote has already been initialized')
-  if (Number(process.versions.electron.split('.')[0]) >= 14)
-    throw new Error('@electron/remote >= 2.x is required for Electron >= 14. See https://github.com/electron/remote/blob/main/docs/migration-2.md for migration instructions.')
   initialized = true
   handleRemoteCommand(IPC_MESSAGES.BROWSER_WRONG_CONTEXT_ERROR, function (event, contextId, passedContextId, id) {
     const objectId: [string, number] = [passedContextId, id]
