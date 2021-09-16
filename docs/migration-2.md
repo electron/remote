@@ -13,6 +13,7 @@ that contents, you must call `enable()`:
 ```js
 // Main process
 const remoteMain = require("@electron/remote/main")
+remoteMain.initialize()
 
 const win = new BrowserWindow(/* ... */)
 remoteMain.enable(win.webContents)
@@ -34,6 +35,7 @@ const win = new BrowserWindow({
 
 // After (@electron/remote@2.x)
 const remoteMain = require("@electron/remote/main")
+remoteMain.initialize()
 const win = new BrowserWindow()
 remoteMain.enable(win.webContents)
 ```
