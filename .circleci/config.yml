@@ -23,40 +23,40 @@ version: 2.1
 jobs:
   test-electron-13:
     docker:
-      - image: circleci/node:12-browsers
+      - image: circleci/node:14-browsers
     <<: *steps-test
 
   test-electron-11:
     docker:
-      - image: circleci/node:12-browsers
+      - image: circleci/node:14-browsers
     environment:
       ELECTRON_VERSION: 11.x
     <<: *steps-test
 
   test-electron-12:
     docker:
-      - image: circleci/node:12-browsers
+      - image: circleci/node:14-browsers
     environment:
       ELECTRON_VERSION: 12.x
     <<: *steps-test
 
   test-electron-14:
     docker:
-      - image: circleci/node:12-browsers
+      - image: circleci/node:14-browsers
     environment:
       ELECTRON_VERSION: 14.x
     <<: *steps-test
 
   test-electron-15:
     docker:
-      - image: circleci/node:12-browsers
+      - image: circleci/node:14-browsers
     environment:
       ELECTRON_VERSION: 15.x
     <<: *steps-test
 
   release:
     docker:
-      - image: circleci/node:12-browsers
+      - image: circleci/node:14-browsers
     steps:
       - checkout
       - *step-restore-cache
