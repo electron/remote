@@ -52,7 +52,7 @@ configure your bundler appropriately to package the code of `@electron/remote`
 in the preload script. Of course, [using `@electron/remote` makes the sandbox
 much less effective][remote-considered-harmful].
 
-**Note:** In `electron >= 14.0.0`, you must use the new `enable` API to enable the remote module for each desired `WebContents` separately: `require("@electron/remote/main").enable(webContents)`.
+**Note:** In `electron >= 14.0.0`, you must use the new `enable` API to enable the remote module for each desired `WebContents` separately: `require("@electron/remote/main").enable(webContents)` from Main process or `remote.require("@electron/remote/main").enable(window.webContents)` from Renderer processes (where `remote` is `require('@electron/remote')`);
 
 In `electron < 14.0.0`, `@electron/remote` respects the `enableRemoteModule` WebPreferences
 value. You must pass `{ webPreferences: { enableRemoteModule: true } }` to
