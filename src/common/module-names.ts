@@ -28,6 +28,7 @@ export const browserModuleNames = [
   'powerMonitor',
   'powerSaveBlocker',
   'protocol',
+  'safeStorage',
   'screen',
   'session',
   'ShareMenu',
