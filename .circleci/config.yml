@@ -40,20 +40,6 @@ jobs:
       ELECTRON_VERSION: 12.x
     <<: *steps-test
 
-  test-electron-14:
-    docker:
-      - image: circleci/node:14-browsers
-    environment:
-      ELECTRON_VERSION: 14.x
-    <<: *steps-test
-
-  test-electron-15:
-    docker:
-      - image: circleci/node:14-browsers
-    environment:
-      ELECTRON_VERSION: 15.x
-    <<: *steps-test
-
   release:
     docker:
       - image: circleci/node:14-browsers
@@ -69,8 +55,6 @@ workflows:
       - test-electron-13
       - test-electron-11
       - test-electron-12
-      - test-electron-14
-      - test-electron-15
       - release:
           requires:
             - test-electron-13
