@@ -23,6 +23,6 @@ declare namespace NodeJS {
     electronBinding(name: 'event'): EventBinding;
     electronBinding(name: 'v8_util'): V8UtilBinding;
     electronBinding(name: 'features'): FeaturesBinding;
-    readonly contextId: string;
+    readonly contextId?: string;
   }
 }

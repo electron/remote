@@ -52,7 +52,7 @@ function makeRemotely (windowGetter: () => BrowserWindow) {
 function makeWindow () {
   let w: BrowserWindow
   before(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, enableRemoteModule: true } })
+    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false, enableRemoteModule: true } })
     await w.loadURL('about:blank')
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
@@ -68,7 +68,7 @@ function makeWindow () {
 function makeEachWindow () {
   let w: BrowserWindow
   beforeEach(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, enableRemoteModule: true } })
+    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false, enableRemoteModule: true } })
     await w.loadURL('about:blank')
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
@@ -342,6 +342,7 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
+          contextIsolation: false,
           enableRemoteModule: true
         }
       })
@@ -354,7 +355,7 @@ describe('remote module', () => {
       w.loadFile(path.join(fixtures, 'render-view-deleted.html'))
     })
   })
-  
+
   describe('nativeImage serialization', () => {
     const w = makeWindow()
     const remotely = makeRemotely(w)
@@ -431,6 +432,7 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
+          contextIsolation: false,
           enableRemoteModule: true
         }
       })

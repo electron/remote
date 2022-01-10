@@ -21,21 +21,28 @@ steps-test: &steps-test
 
 version: 2.1
 jobs:
-  test:
+  test-electron-13:
     docker:
-      - image: circleci/node:10-browsers
+      - image: circleci/node:14-browsers
     <<: *steps-test
 
   test-electron-11:
     docker:
-      - image: circleci/node:10-browsers
+      - image: circleci/node:14-browsers
     environment:
       ELECTRON_VERSION: 11.x
     <<: *steps-test
 
+  test-electron-12:
+    docker:
+      - image: circleci/node:14-browsers
+    environment:
+      ELECTRON_VERSION: 12.x
+    <<: *steps-test
+
   release:
     docker:
-      - image: circleci/node:10-browsers
+      - image: circleci/node:14-browsers
     steps:
       - checkout
       - *step-restore-cache
@@ -45,11 +52,12 @@ workflows:
   version: 2
   test_and_release:
     jobs:
-      - test
+      - test-electron-13
       - test-electron-11
+      - test-electron-12
       - release:
           requires:
-            - test
+            - test-electron-13
           filters:
             branches:
               only:
