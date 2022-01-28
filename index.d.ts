@@ -34,7 +34,7 @@ export var powerSaveBlocker: Electron.PowerSaveBlocker;
 export var protocol: Electron.Protocol;
 export var screen: Electron.Screen;
 export var ServiceWorkers: Main.ServiceWorkers;
-export var session: Main.Session;
+export var session: typeof Electron.session;
 export var shell: Electron.Shell;
 export var systemPreferences: Electron.SystemPreferences;
 export var TouchBar: typeof Electron.TouchBar;
