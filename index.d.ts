@@ -49,11 +49,13 @@ export var powerSaveBlocker: Electron.PowerSaveBlocker;
 export var protocol: Electron.Protocol;
 export var screen: Electron.Screen;
 export var session: typeof Electron.session;
+export var ShareMenu: typeof Electron.ShareMenu;
 export var shell: Electron.Shell;
 export var systemPreferences: Electron.SystemPreferences;
 export var TouchBar: typeof Electron.TouchBar;
 export var Tray: typeof Electron.Tray;
 export var webContents: typeof Electron.WebContents;
+export var webFrameMain: typeof Electron.WebFrameMain;
 
 // Taken from `Remote`
 export function getCurrentWebContents(): Electron.WebContents;
