@@ -1,5 +1,5 @@
 /// <reference path="../src/internal-ambient.d.ts" />
-import { initialize } from '../src/main'
+import { enable, initialize } from '../src/main'
 import { expect } from 'chai'
 import * as path from 'path'
 import { ipcMain, BrowserWindow, protocol, nativeImage, NativeImage, app, WebContents } from 'electron'
@@ -52,7 +52,8 @@ function makeRemotely (windowGetter: () => BrowserWindow) {
 function makeWindow () {
   let w: BrowserWindow
   before(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false, enableRemoteModule: true } })
+    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false } })
+    enable(w.webContents)
     await w.loadURL('about:blank')
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
@@ -68,7 +69,8 @@ function makeWindow () {
 function makeEachWindow () {
   let w: BrowserWindow
   beforeEach(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false, enableRemoteModule: true } })
+    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false } })
+    enable(w.webContents)
     await w.loadURL('about:blank')
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
@@ -327,10 +329,10 @@ describe('remote module', () => {
       const w = new BrowserWindow({
         show: false,
         webPreferences: {
-          preload,
-          enableRemoteModule: true
+          preload
         }
       })
+      enable(w.webContents)
       w.loadURL('about:blank')
       await emittedOnce(ipcMain, 'done')
     })
@@ -342,10 +344,10 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
-          contextIsolation: false,
-          enableRemoteModule: true
+          contextIsolation: false
         }
       })
+      enable(w.webContents)
 
       ipcMain.once('error-message', (event, message) => {
         expect(message).to.match(/^Cannot call method 'getURL' on missing remote object/)
@@ -434,10 +436,10 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
-          contextIsolation: false,
-          enableRemoteModule: true
+          contextIsolation: false
         }
       })
+      enable(w.webContents)
       await w.loadFile(path.join(fixtures, 'remote-event-handler.html'))
       w.webContents.reload()
       await emittedOnce(w.webContents, 'did-finish-load')
