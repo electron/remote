@@ -369,7 +369,7 @@ describe('remote module', () => {
 
       await expect(remotely(() => {
         const emptyImage = require('electron').nativeImage.createEmpty()
-        return require('electron').remote.getGlobal('someFunction')(emptyImage)
+        return require('./renderer').getGlobal('someFunction')(emptyImage)
       })).to.eventually.be.true()
     })
 
@@ -380,7 +380,7 @@ describe('remote module', () => {
       })
 
       await expect(remotely(() => {
-        const image = require('electron').remote.getGlobal('someFunction')
+        const image = require('./renderer').getGlobal('someFunction')
         return image.isEmpty()
       })).to.eventually.be.true()
     })
@@ -394,8 +394,9 @@ describe('remote module', () => {
 
       await expect(remotely(() => {
         const { nativeImage } = require('electron')
+        const remote = require('./renderer')
         const nonEmptyImage = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==')
-        return require('electron').remote.getGlobal('someFunction')(nonEmptyImage)
+        return remote.getGlobal('someFunction')(nonEmptyImage)
       })).to.eventually.deep.equal({ width: 2, height: 2 })
     })
 
@@ -406,14 +407,15 @@ describe('remote module', () => {
       })
 
       await expect(remotely(() => {
-        const image = require('electron').remote.getGlobal('someFunction')
+        const image = require('./renderer').getGlobal('someFunction')
         return image.getSize()
       })).to.eventually.deep.equal({ width: 2, height: 2 })
     })
 
     it('can properly create a menu with an nativeImage icon in the renderer', async () => {
       await expect(remotely(() => {
-        const { remote, nativeImage } = require('electron')
+        const { nativeImage } = require('electron')
+        const remote = require('./renderer')
         remote.Menu.buildFromTemplate([
           {
             label: 'hello',
@@ -639,7 +641,7 @@ describe('remote module', () => {
 
     const protocolKeys = Object.getOwnPropertyNames(protocol);
     remotely.it(protocolKeys)('remote.protocol returns all keys', (protocolKeys: [string]) => {
-      const protocol = require('electron').remote.protocol;
+      const protocol = require('./renderer').protocol;
       const remoteKeys = Object.getOwnPropertyNames(protocol);
       expect(remoteKeys).to.deep.equal(protocolKeys);
       for (const key of remoteKeys) {
@@ -721,7 +723,7 @@ describe('remote module', () => {
         Foo.prototype.constructor = undefined as any
         event.returnValue = new Foo()
       })
-      expect(await remotely(() => require('electron').remote.getGlobal('test').bar())).to.equal('bar')
+      expect(await remotely(() => require('./renderer').getGlobal('test').bar())).to.equal('bar')
     })
   })
 
@@ -920,7 +922,7 @@ describe('remote module', () => {
       delete (global as any).returnAPromise
     })
     remotely.it()('using a promise based method resolves correctly when global Promise is overridden', async () => {
-      const { remote } = require('electron')
+      const remote = require('./renderer')
       const original = global.Promise
       try {
         expect(await remote.getGlobal('returnAPromise')(123)).to.equal(123)
@@ -1033,7 +1035,7 @@ describe('remote module', () => {
 
         for (let i = 0; i < 100; i++) {
           // eslint-disable-next-line
-          require('electron').remote.getGlobal('test').x
+          require('./renderer').getGlobal('test').x
         }
       })
     })
