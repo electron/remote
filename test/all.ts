@@ -237,12 +237,12 @@ describe('remote module', () => {
       describe(name, () => {
         describe('remote.getGlobal', () => {
           it('can return custom values', async () => {
-            emitter().once('remote-get-global', returnFirstArg)
+            emitter().once('remote-get-global' as any, returnFirstArg)
             expect(await remotely(() => require('./renderer').getGlobal('test'))).to.equal('test')
           })
 
           it('throws when no returnValue set', async () => {
-            emitter().once('remote-get-global', preventDefault)
+            emitter().once('remote-get-global' as any, preventDefault)
             await expect(remotely(() => require('./renderer').getGlobal('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
           })
         })
@@ -365,7 +365,7 @@ describe('remote module', () => {
     it('can serialize an empty nativeImage from renderer to main', async () => {
       const getImageEmpty = (img: NativeImage) => img.isEmpty()
 
-      w().webContents.once('remote-get-global', (event) => {
+      w().webContents.once('remote-get-global' as any, (event: any) => {
         event.returnValue = getImageEmpty
       })
 
@@ -376,7 +376,7 @@ describe('remote module', () => {
     })
 
     it('can serialize an empty nativeImage from main to renderer', async () => {
-      w().webContents.once('remote-get-global', (event) => {
+      w().webContents.once('remote-get-global' as any, (event) => {
         const emptyImage = require('electron').nativeImage.createEmpty()
         event.returnValue = emptyImage
       })
@@ -390,7 +390,7 @@ describe('remote module', () => {
     it('can serialize a non-empty nativeImage from renderer to main', async () => {
       const getImageSize = (img: NativeImage) => img.getSize()
 
-      w().webContents.once('remote-get-global', (event) => {
+      w().webContents.once('remote-get-global' as any, (event: any) => {
         event.returnValue = getImageSize
       })
 
@@ -403,7 +403,7 @@ describe('remote module', () => {
     })
 
     it('can serialize a non-empty nativeImage from main to renderer', async () => {
-      w().webContents.once('remote-get-global', (event) => {
+      w().webContents.once('remote-get-global' as any, (event: any) => {
         const nonEmptyImage = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==')
         event.returnValue = nonEmptyImage
       })
@@ -720,7 +720,7 @@ describe('remote module', () => {
     })
 
     it('can handle objects without constructors', async () => {
-      win().webContents.once('remote-get-global', (event) => {
+      win().webContents.once('remote-get-global' as any, (event: any) => {
         class Foo { bar () { return 'bar'; } }
         Foo.prototype.constructor = undefined as any
         event.returnValue = new Foo()
@@ -1023,7 +1023,7 @@ describe('remote module', () => {
     const remotely = makeRemotely(win)
     it('is resilient to gc happening between request and response', async () => {
       const obj = { x: 'y' }
-      win().webContents.on('remote-get-global', (event) => {
+      win().webContents.on('remote-get-global' as any, (event: any) => {
         event.returnValue = obj
       })
       await remotely(() => {
