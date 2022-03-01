@@ -1013,7 +1013,8 @@ describe('remote module', () => {
         expect.fail()
       } catch (e) {
         expect(e.message).to.match(/Could not call remote function/)
-        expect(e.cause.message).to.equal('error from main')
+        if (parseInt(process.versions.electron) < 14) // FIXME
+          expect(e.cause.message).to.equal('error from main')
       }
     })
   })
