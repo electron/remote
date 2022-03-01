@@ -1027,7 +1027,7 @@ describe('remote module', () => {
         const originalSendSync = ipcRenderer.sendSync.bind(ipcRenderer) as any
         ipcRenderer.sendSync = (...args: any[]): any => {
           const ret = originalSendSync(...args)
-          (window as any).gc()
+          ;(window as any).gc()
           return ret
         }
 
