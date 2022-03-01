@@ -6,6 +6,8 @@ import { browserModuleNames } from '../common/module-names'
 import { getElectronBinding } from '../common/get-electron-binding'
 import { IPC_MESSAGES } from '../common/ipc-messages';
 
+const { Promise } = global
+
 const callbacksRegistry = new CallbacksRegistry()
 const remoteObjectCache = new Map()
 const finalizationRegistry = new FinalizationRegistry((id: number) => {

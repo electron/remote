@@ -6,6 +6,8 @@ import { ipcMain, WebContents, IpcMainEvent, app } from 'electron'
 import { IPC_MESSAGES } from '../common/ipc-messages';
 import { getElectronBinding } from '../common/get-electron-binding'
 
+const { Promise } = global
+
 const v8Util = getElectronBinding('v8_util')
 
 const hasWebPrefsRemoteModuleAPI = (() => {
