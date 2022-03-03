@@ -31,7 +31,7 @@
     "yargs": "^15.3.1"
   },
   "scripts": {
-    "prepublishOnly": "tsc",
+    "prepare": "tsc",
     "test": "electron test --extension=ts --require=ts-node/register --exit --js-flags=--expose_gc",
     "test:ci": "yarn test --reporter=mocha-multi-reporters --reporter-options=configFile=.circleci/mocha-reporter-config.json"
   },
