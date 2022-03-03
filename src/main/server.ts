@@ -467,7 +467,10 @@ export function initialize() {
     try {
       return valueToMeta(event.sender, contextId, func(...args), true)
     } catch (error) {
-      const err = new Error(`Could not call remote function '${func.name || 'anonymous'}'. Check that the function signature is correct. Underlying error: ${error.message}\nUnderlying stack: ${error.stack}\n`);
+      const err = new Error(
+        `Could not call remote function '${func.name || "anonymous"}'. Check that the function signature is correct. Underlying error: ${error}\n` +
+          (error instanceof Error ? `Underlying stack: ${error.stack}\n` : "")
+      );
       (err as any).cause = error
       throw err
     }
@@ -495,7 +498,10 @@ export function initialize() {
     try {
       return valueToMeta(event.sender, contextId, object[method](...args), true)
     } catch (error) {
-      const err = new Error(`Could not call remote method '${method}'. Check that the method signature is correct. Underlying error: ${error.message}\nUnderlying stack: ${error.stack}\n`);
+      const err = new Error(
+        `Could not call remote method '${method}'. Check that the method signature is correct. Underlying error: ${error}` +
+          (error instanceof Error ? `Underlying stack: ${error.stack}\n` : "")
+      );
       (err as any).cause = error
       throw err
     }
