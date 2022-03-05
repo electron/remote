@@ -38,8 +38,8 @@
   "files": [
     "README.md",
     "package.json",
-    "main/index.js",
-    "renderer/index.js",
+    "main",
+    "renderer",
     "dist/src",
     "index.d.ts"
   ],
