@@ -1,5 +1,5 @@
 /// <reference path="../src/internal-ambient.d.ts" />
-import { initialize } from '../src/main'
+import { enable, initialize } from '../src/main'
 import { expect } from 'chai'
 import * as path from 'path'
 import { ipcMain, BrowserWindow, protocol, nativeImage, NativeImage, app, WebContents } from 'electron'
@@ -52,7 +52,8 @@ function makeRemotely (windowGetter: () => BrowserWindow) {
 function makeWindow () {
   let w: BrowserWindow
   before(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false, enableRemoteModule: true } })
+    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false } })
+    enable(w.webContents)
     await w.loadURL('about:blank')
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
@@ -68,7 +69,8 @@ function makeWindow () {
 function makeEachWindow () {
   let w: BrowserWindow
   beforeEach(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false, enableRemoteModule: true } })
+    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false } })
+    enable(w.webContents)
     await w.loadURL('about:blank')
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
@@ -235,12 +237,12 @@ describe('remote module', () => {
       describe(name, () => {
         describe('remote.getGlobal', () => {
           it('can return custom values', async () => {
-            emitter().once('remote-get-global', returnFirstArg)
+            emitter().once('remote-get-global' as any, returnFirstArg)
             expect(await remotely(() => require('./renderer').getGlobal('test'))).to.equal('test')
           })
 
           it('throws when no returnValue set', async () => {
-            emitter().once('remote-get-global', preventDefault)
+            emitter().once('remote-get-global' as any, preventDefault)
             await expect(remotely(() => require('./renderer').getGlobal('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
           })
         })
@@ -327,10 +329,10 @@ describe('remote module', () => {
       const w = new BrowserWindow({
         show: false,
         webPreferences: {
-          preload,
-          enableRemoteModule: true
+          preload
         }
       })
+      enable(w.webContents)
       w.loadURL('about:blank')
       await emittedOnce(ipcMain, 'done')
     })
@@ -342,10 +344,10 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
-          contextIsolation: false,
-          enableRemoteModule: true
+          contextIsolation: false
         }
       })
+      enable(w.webContents)
 
       ipcMain.once('error-message', (event, message) => {
         expect(message).to.match(/^Cannot call method 'getURL' on missing remote object/)
@@ -363,24 +365,24 @@ describe('remote module', () => {
     it('can serialize an empty nativeImage from renderer to main', async () => {
       const getImageEmpty = (img: NativeImage) => img.isEmpty()
 
-      w().webContents.once('remote-get-global', (event) => {
+      w().webContents.once('remote-get-global' as any, (event: any) => {
         event.returnValue = getImageEmpty
       })
 
       await expect(remotely(() => {
         const emptyImage = require('electron').nativeImage.createEmpty()
-        return require('electron').remote.getGlobal('someFunction')(emptyImage)
+        return require('./renderer').getGlobal('someFunction')(emptyImage)
       })).to.eventually.be.true()
     })
 
     it('can serialize an empty nativeImage from main to renderer', async () => {
-      w().webContents.once('remote-get-global', (event) => {
+      w().webContents.once('remote-get-global' as any, (event) => {
         const emptyImage = require('electron').nativeImage.createEmpty()
         event.returnValue = emptyImage
       })
 
       await expect(remotely(() => {
-        const image = require('electron').remote.getGlobal('someFunction')
+        const image = require('./renderer').getGlobal('someFunction')
         return image.isEmpty()
       })).to.eventually.be.true()
     })
@@ -388,32 +390,34 @@ describe('remote module', () => {
     it('can serialize a non-empty nativeImage from renderer to main', async () => {
       const getImageSize = (img: NativeImage) => img.getSize()
 
-      w().webContents.once('remote-get-global', (event) => {
+      w().webContents.once('remote-get-global' as any, (event: any) => {
         event.returnValue = getImageSize
       })
 
       await expect(remotely(() => {
         const { nativeImage } = require('electron')
+        const remote = require('./renderer')
         const nonEmptyImage = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==')
-        return require('electron').remote.getGlobal('someFunction')(nonEmptyImage)
+        return remote.getGlobal('someFunction')(nonEmptyImage)
       })).to.eventually.deep.equal({ width: 2, height: 2 })
     })
 
     it('can serialize a non-empty nativeImage from main to renderer', async () => {
-      w().webContents.once('remote-get-global', (event) => {
+      w().webContents.once('remote-get-global' as any, (event: any) => {
         const nonEmptyImage = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==')
         event.returnValue = nonEmptyImage
       })
 
       await expect(remotely(() => {
-        const image = require('electron').remote.getGlobal('someFunction')
+        const image = require('./renderer').getGlobal('someFunction')
         return image.getSize()
       })).to.eventually.deep.equal({ width: 2, height: 2 })
     })
 
     it('can properly create a menu with an nativeImage icon in the renderer', async () => {
       await expect(remotely(() => {
-        const { remote, nativeImage } = require('electron')
+        const { nativeImage } = require('electron')
+        const remote = require('./renderer')
         remote.Menu.buildFromTemplate([
           {
             label: 'hello',
@@ -432,10 +436,10 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
-          contextIsolation: false,
-          enableRemoteModule: true
+          contextIsolation: false
         }
       })
+      enable(w.webContents)
       await w.loadFile(path.join(fixtures, 'remote-event-handler.html'))
       w.webContents.reload()
       await emittedOnce(w.webContents, 'did-finish-load')
@@ -639,7 +643,7 @@ describe('remote module', () => {
 
     const protocolKeys = Object.getOwnPropertyNames(protocol);
     remotely.it(protocolKeys)('remote.protocol returns all keys', (protocolKeys: [string]) => {
-      const protocol = require('electron').remote.protocol;
+      const protocol = require('./renderer').protocol;
       const remoteKeys = Object.getOwnPropertyNames(protocol);
       expect(remoteKeys).to.deep.equal(protocolKeys);
       for (const key of remoteKeys) {
@@ -716,12 +720,12 @@ describe('remote module', () => {
     })
 
     it('can handle objects without constructors', async () => {
-      win().webContents.once('remote-get-global', (event) => {
+      win().webContents.once('remote-get-global' as any, (event: any) => {
         class Foo { bar () { return 'bar'; } }
         Foo.prototype.constructor = undefined as any
         event.returnValue = new Foo()
       })
-      expect(await remotely(() => require('electron').remote.getGlobal('test').bar())).to.equal('bar')
+      expect(await remotely(() => require('./renderer').getGlobal('test').bar())).to.equal('bar')
     })
   })
 
@@ -920,7 +924,7 @@ describe('remote module', () => {
       delete (global as any).returnAPromise
     })
     remotely.it()('using a promise based method resolves correctly when global Promise is overridden', async () => {
-      const { remote } = require('electron')
+      const remote = require('./renderer')
       const original = global.Promise
       try {
         expect(await remote.getGlobal('returnAPromise')(123)).to.equal(123)
@@ -1009,7 +1013,8 @@ describe('remote module', () => {
         expect.fail()
       } catch (e: any) {
         expect(e.message).to.match(/Could not call remote function/)
-        expect(e.cause.message).to.equal('error from main')
+        if (parseInt(process.versions.electron) < 14) // FIXME
+          expect(e.cause.message).to.equal('error from main')
       }
     })
   })
@@ -1019,7 +1024,7 @@ describe('remote module', () => {
     const remotely = makeRemotely(win)
     it('is resilient to gc happening between request and response', async () => {
       const obj = { x: 'y' }
-      win().webContents.on('remote-get-global', (event) => {
+      win().webContents.on('remote-get-global' as any, (event: any) => {
         event.returnValue = obj
       })
       await remotely(() => {
@@ -1027,13 +1032,13 @@ describe('remote module', () => {
         const originalSendSync = ipcRenderer.sendSync.bind(ipcRenderer) as any
         ipcRenderer.sendSync = (...args: any[]): any => {
           const ret = originalSendSync(...args)
-          (window as any).gc()
+          ;(window as any).gc()
           return ret
         }
 
         for (let i = 0; i < 100; i++) {
           // eslint-disable-next-line
-          require('electron').remote.getGlobal('test').x
+          require('./renderer').getGlobal('test').x
         }
       })
     })
