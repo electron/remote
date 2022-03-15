@@ -39,7 +39,7 @@ export var ipcMain: Electron.IpcMain;
 export var Menu: typeof Electron.Menu;
 export var MenuItem: typeof Electron.MenuItem;
 export var MessageChannelMain: typeof Electron.MessageChannelMain;
-export var nativeImage: typeof Electron.NativeImage;
+export var nativeImage: typeof Electron.nativeImage;
 export var nativeTheme: Electron.NativeTheme;
 export var net: Electron.Net;
 export var netLog: Electron.NetLog;
@@ -54,8 +54,8 @@ export var shell: Electron.Shell;
 export var systemPreferences: Electron.SystemPreferences;
 export var TouchBar: typeof Electron.TouchBar;
 export var Tray: typeof Electron.Tray;
-export var webContents: typeof Electron.WebContents;
-export var webFrameMain: typeof Electron.WebFrameMain;
+export var webContents: typeof Electron.webContents;
+export var webFrameMain: typeof Electron.webFrameMain;
 
 // Taken from `Remote`
 export function getCurrentWebContents(): Electron.WebContents;
