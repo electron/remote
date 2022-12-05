@@ -329,7 +329,8 @@ describe('remote module', () => {
       const w = new BrowserWindow({
         show: false,
         webPreferences: {
-          preload
+          preload,
+          sandbox: false
         }
       })
       enable(w.webContents)
