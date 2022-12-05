@@ -21,16 +21,18 @@ steps-test: &steps-test
 
 version: 2.1
 jobs:
-  test-electron-13:
-    docker:
-      - image: circleci/node:14-browsers
-    <<: *steps-test
-
   test-electron-12:
     docker:
       - image: circleci/node:14-browsers
     environment:
       ELECTRON_VERSION: 12.x
+    <<: *steps-test
+
+  test-electron-13:
+    docker:
+      - image: circleci/node:14-browsers
+    environment:
+      ELECTRON_VERSION: 13.x
     <<: *steps-test
 
   test-electron-14:
@@ -68,6 +70,34 @@ jobs:
       ELECTRON_VERSION: 18.x
     <<: *steps-test
 
+  test-electron-19:
+    docker:
+      - image: circleci/node:14-browsers
+    environment:
+      ELECTRON_VERSION: 19.x
+    <<: *steps-test
+
+  test-electron-20:
+    docker:
+      - image: circleci/node:14-browsers
+    environment:
+      ELECTRON_VERSION: 20.x
+    <<: *steps-test
+
+  test-electron-21:
+    docker:
+      - image: circleci/node:14-browsers
+    environment:
+      ELECTRON_VERSION: 21.x
+    <<: *steps-test
+
+  test-electron-22:
+    docker:
+      - image: circleci/node:14-browsers
+    environment:
+      ELECTRON_VERSION: 22.x
+    <<: *steps-test
+
   release:
     docker:
       - image: circleci/node:14-browsers
@@ -80,16 +110,30 @@ workflows:
   version: 2
   test_and_release:
     jobs:
-      - test-electron-13
       - test-electron-12
+      - test-electron-13
       - test-electron-14
       - test-electron-15
       - test-electron-16
       - test-electron-17
       - test-electron-18
+      - test-electron-19
+      - test-electron-20
+      - test-electron-21
+      - test-electron-22
       - release:
           requires:
+            - test-electron-12
             - test-electron-13
+            - test-electron-14
+            - test-electron-15
+            - test-electron-16
+            - test-electron-17
+            - test-electron-18
+            - test-electron-19
+            - test-electron-20
+            - test-electron-21
+            - test-electron-22
           filters:
             branches:
               only:
