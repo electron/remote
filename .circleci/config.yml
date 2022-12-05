@@ -15,81 +15,126 @@ steps-test: &steps-test
         key: v1-dependencies-{{ arch }}-{{ checksum "yarn.lock" }}
     - run: if [[ -n "${ELECTRON_VERSION}" ]]; then yarn add "electron@${ELECTRON_VERSION}"; fi
     - run: yarn tsc
-    - run: yarn test:ci
+    - run: yarn test:ci $EXTRA_ELECTRON_FLAGS
     - store_test_results:
         path: test-results
 
 version: 2.1
 jobs:
-  test-electron-13:
-    docker:
-      - image: circleci/node:14-browsers
-    <<: *steps-test
-
   test-electron-12:
     docker:
-      - image: circleci/node:14-browsers
+      - image: cimg/node:18.12.1-browsers
     environment:
       ELECTRON_VERSION: 12.x
+      EXTRA_ELECTRON_FLAGS: --in-process-gpu
+    <<: *steps-test
+
+  test-electron-13:
+    docker:
+      - image: cimg/node:18.12.1-browsers
+    environment:
+      ELECTRON_VERSION: 13.x
     <<: *steps-test
 
   test-electron-14:
     docker:
-      - image: circleci/node:14-browsers
+      - image: cimg/node:18.12.1-browsers
     environment:
       ELECTRON_VERSION: 14.x
     <<: *steps-test
 
   test-electron-15:
     docker:
-      - image: circleci/node:14-browsers
+      - image: cimg/node:18.12.1-browsers
     environment:
       ELECTRON_VERSION: 15.x
     <<: *steps-test
 
   test-electron-16:
     docker:
-      - image: circleci/node:14-browsers
+      - image: cimg/node:18.12.1-browsers
     environment:
       ELECTRON_VERSION: 16.x
     <<: *steps-test
 
   test-electron-17:
     docker:
-      - image: circleci/node:14-browsers
+      - image: cimg/node:18.12.1-browsers
     environment:
       ELECTRON_VERSION: 17.x
     <<: *steps-test
 
   test-electron-18:
     docker:
-      - image: circleci/node:14-browsers
+      - image: cimg/node:18.12.1-browsers
     environment:
       ELECTRON_VERSION: 18.x
     <<: *steps-test
 
+  test-electron-19:
+    docker:
+      - image: cimg/node:18.12.1-browsers
+    environment:
+      ELECTRON_VERSION: 19.x
+    <<: *steps-test
+
+  test-electron-20:
+    docker:
+      - image: cimg/node:18.12.1-browsers
+    environment:
+      ELECTRON_VERSION: 20.x
+    <<: *steps-test
+
+  test-electron-21:
+    docker:
+      - image: cimg/node:18.12.1-browsers
+    environment:
+      ELECTRON_VERSION: 21.x
+    <<: *steps-test
+
+  test-electron-22:
+    docker:
+      - image: cimg/node:18.12.1-browsers
+    environment:
+      ELECTRON_VERSION: 22.x
+    <<: *steps-test
+
   release:
     docker:
-      - image: circleci/node:14-browsers
+      - image: cimg/node:18.12.1-browsers
     steps:
       - checkout
       - *step-restore-cache
       - run: yarn
-      - run: npx semantic-release
+      - run: npx semantic-release@17.4.5
 workflows:
   version: 2
   test_and_release:
     jobs:
-      - test-electron-13
       - test-electron-12
+      - test-electron-13
       - test-electron-14
       - test-electron-15
       - test-electron-16
       - test-electron-17
       - test-electron-18
+      - test-electron-19
+      - test-electron-20
+      - test-electron-21
+      - test-electron-22
       - release:
           requires:
+            - test-electron-12
             - test-electron-13
+            - test-electron-14
+            - test-electron-15
+            - test-electron-16
+            - test-electron-17
+            - test-electron-18
+            - test-electron-19
+            - test-electron-20
+            - test-electron-21
+            - test-electron-22
           filters:
             branches:
               only:
