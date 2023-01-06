@@ -20,6 +20,8 @@ steps-test: &steps-test
         path: test-results
 
 version: 2.1
+orbs:
+  cfa: continuousauth/npm@1.0.2
 jobs:
   test-electron-12:
     docker:
@@ -99,16 +101,7 @@ jobs:
       ELECTRON_VERSION: 22.x
     <<: *steps-test
 
-  release:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    steps:
-      - checkout
-      - *step-restore-cache
-      - run: yarn
-      - run: npx semantic-release@17.4.5
 workflows:
-  version: 2
   test_and_release:
     jobs:
       - test-electron-12
@@ -122,7 +115,7 @@ workflows:
       - test-electron-20
       - test-electron-21
       - test-electron-22
-      - release:
+      - cfa/release:
           requires:
             - test-electron-12
             - test-electron-13
@@ -139,3 +132,4 @@ workflows:
             branches:
               only:
                 - main
+          context: cfa-release
