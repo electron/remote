@@ -249,6 +249,7 @@ function proxyFunctionProperties (remoteMemberFunction: Function, metaId: number
 
 // Convert meta data from browser into real value.
 function metaToValue (meta: MetaType): any {
+  if(!meta) return {}
   if (meta.type === 'value') {
     return meta.value
   } else if (meta.type === 'array') {
