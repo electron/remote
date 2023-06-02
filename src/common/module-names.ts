@@ -15,7 +15,6 @@ export const browserModuleNames = [
   'contentTracing',
   'crashReporter',
   'dialog',
-  'desktopCapturer',
   'globalShortcut',
   'ipcMain',
   'inAppPurchase',
@@ -46,6 +45,10 @@ export const browserModuleNames = [
 ].concat(commonModuleNames);
 
 const features = getElectronBinding('features');
+
+if (!features || !features.isDesktopCapturerEnabled || features.isDesktopCapturerEnabled()) {
+  browserModuleNames.push('desktopCapturer');
+}
 
 if (!features || features.isViewApiEnabled()) {
   browserModuleNames.push('ImageView');
