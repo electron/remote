@@ -46,7 +46,7 @@ export const browserModuleNames = [
 
 const features = getElectronBinding('features');
 
-if (!features || features.isDesktopCapturerEnabled()) {
+if (!features || !features.isDesktopCapturerEnabled || features.isDesktopCapturerEnabled()) {
   browserModuleNames.push('desktopCapturer');
 }
 
