@@ -101,6 +101,27 @@ jobs:
       ELECTRON_VERSION: 22.x
     <<: *steps-test
 
+  test-electron-23:
+    docker:
+      - image: cimg/node:18.12.1-browsers
+    environment:
+      ELECTRON_VERSION: 23.x
+    <<: *steps-test
+
+  test-electron-24:
+    docker:
+      - image: cimg/node:18.12.1-browsers
+    environment:
+      ELECTRON_VERSION: 24.x
+    <<: *steps-test
+
+  test-electron-25:
+    docker:
+      - image: cimg/node:18.12.1-browsers
+    environment:
+      ELECTRON_VERSION: 25.x
+    <<: *steps-test
+
 workflows:
   test_and_release:
     jobs:
@@ -115,6 +136,9 @@ workflows:
       - test-electron-20
       - test-electron-21
       - test-electron-22
+      - test-electron-23
+      - test-electron-24
+      - test-electron-25
       - cfa/release:
           requires:
             - test-electron-12
@@ -128,6 +152,9 @@ workflows:
             - test-electron-20
             - test-electron-21
             - test-electron-22
+            - test-electron-23
+            - test-electron-24
+            - test-electron-25
           filters:
             branches:
               only:
