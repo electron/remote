@@ -45,7 +45,7 @@ workflows:
   test_and_release:
     jobs:
       - test-electron-12
-      - test-electron
+      - test-electron:
           matrix:
             parameters:
               electron-version:
