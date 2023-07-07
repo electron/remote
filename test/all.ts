@@ -377,7 +377,7 @@ describe('remote module', () => {
     })
 
     it('can serialize an empty nativeImage from main to renderer', async () => {
-      w().webContents.once('remote-get-global' as any, (event) => {
+      w().webContents.once('remote-get-global' as any, (event: any) => {
         const emptyImage = require('electron').nativeImage.createEmpty()
         event.returnValue = emptyImage
       })
