@@ -31,130 +31,41 @@ jobs:
       EXTRA_ELECTRON_FLAGS: --in-process-gpu
     <<: *steps-test
 
-  test-electron-13:
+  test-electron:
     docker:
       - image: cimg/node:18.12.1-browsers
     environment:
-      ELECTRON_VERSION: 13.x
-    <<: *steps-test
-
-  test-electron-14:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 14.x
-    <<: *steps-test
-
-  test-electron-15:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 15.x
-    <<: *steps-test
-
-  test-electron-16:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 16.x
-    <<: *steps-test
-
-  test-electron-17:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 17.x
-    <<: *steps-test
-
-  test-electron-18:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 18.x
-    <<: *steps-test
-
-  test-electron-19:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 19.x
-    <<: *steps-test
-
-  test-electron-20:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 20.x
-    <<: *steps-test
-
-  test-electron-21:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 21.x
-    <<: *steps-test
-
-  test-electron-22:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 22.x
-    <<: *steps-test
-
-  test-electron-23:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 23.x
-    <<: *steps-test
-
-  test-electron-24:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 24.x
-    <<: *steps-test
-
-  test-electron-25:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 25.x
+      ELECTRON_VERSION: << parameters.electron-version >>.x
+    parameters:
+      electron-version:
+        type: string
     <<: *steps-test
 
 workflows:
   test_and_release:
     jobs:
       - test-electron-12
-      - test-electron-13
-      - test-electron-14
-      - test-electron-15
-      - test-electron-16
-      - test-electron-17
-      - test-electron-18
-      - test-electron-19
-      - test-electron-20
-      - test-electron-21
-      - test-electron-22
-      - test-electron-23
-      - test-electron-24
-      - test-electron-25
+      - test-electron
+          matrix:
+            parameters:
+              electron-version:
+                - 13
+                - 14
+                - 15
+                - 16
+                - 17
+                - 18
+                - 19
+                - 20
+                - 21
+                - 22
+                - 23
+                - 24
+                - 25
       - cfa/release:
           requires:
             - test-electron-12
-            - test-electron-13
-            - test-electron-14
-            - test-electron-15
-            - test-electron-16
-            - test-electron-17
-            - test-electron-18
-            - test-electron-19
-            - test-electron-20
-            - test-electron-21
-            - test-electron-22
-            - test-electron-23
-            - test-electron-24
-            - test-electron-25
+            - test-electron
           filters:
             branches:
               only:
