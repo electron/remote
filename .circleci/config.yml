@@ -38,7 +38,7 @@ jobs:
       ELECTRON_VERSION: << parameters.electron-version >>.x
     parameters:
       electron-version:
-        type: string
+        type: integer
     <<: *steps-test
 
 workflows:
