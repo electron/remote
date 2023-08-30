@@ -1,54 +1,39 @@
-step-restore-cache: &step-restore-cache
-  restore_cache:
-    keys:
-      - v1-dependencies-{{ arch }}-{{ checksum "yarn.lock" }}
-      - v1-dependencies-{{ arch }}
-
-steps-test: &steps-test
-  steps:
-    - checkout
-    - *step-restore-cache
-    - run: yarn
-    - save_cache:
-        paths:
-          - node_modules
-        key: v1-dependencies-{{ arch }}-{{ checksum "yarn.lock" }}
-    - run: if [[ -n "${ELECTRON_VERSION}" ]]; then yarn add "electron@${ELECTRON_VERSION}"; fi
-    - run: yarn tsc
-    - run: yarn test:ci $EXTRA_ELECTRON_FLAGS
-    - store_test_results:
-        path: test-results
-
 version: 2.1
+
 orbs:
   cfa: continuousauth/npm@1.0.2
-jobs:
-  test-electron-12:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: 12.x
-      EXTRA_ELECTRON_FLAGS: --in-process-gpu
-    <<: *steps-test
+  node: electronjs/node@1.4.1
 
+jobs:
   test-electron:
-    docker:
-      - image: cimg/node:18.12.1-browsers
-    environment:
-      ELECTRON_VERSION: << parameters.electron-version >>.x
+    executor: node/linux
     parameters:
       electron-version:
         type: integer
-    <<: *steps-test
+    steps:
+      - node/test:
+          node-version: '18.12'
+          test-steps:
+            - run: yarn add "electron@<< parameters.electron-version >>"
+            - run: yarn tsc
+            - run: |
+                if [[ << parameters.electron-version >> -eq 12 ]]; then
+                  yarn test:ci --in-process-gpu;
+                else
+                  yarn test:ci;
+                fi
+            - store_test_results:
+                path: test-results
+          use-test-steps: true
 
 workflows:
   test_and_release:
     jobs:
-      - test-electron-12
       - test-electron:
           matrix:
             parameters:
               electron-version:
+                - 12
                 - 13
                 - 14
                 - 15
@@ -64,7 +49,6 @@ workflows:
                 - 25
       - cfa/release:
           requires:
-            - test-electron-12
             - test-electron
           filters:
             branches:
