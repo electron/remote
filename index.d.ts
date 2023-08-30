@@ -9,7 +9,6 @@ export {
   DownloadItem,
   IncomingMessage,
   MessagePortMain,
-  SafeStorage,
   ServiceWorkers,
   TouchBarButton,
   TouchBarColorPicker,
@@ -48,7 +47,6 @@ export var Notification: typeof Electron.Notification;
 export var powerMonitor: Electron.PowerMonitor;
 export var powerSaveBlocker: Electron.PowerSaveBlocker;
 export var protocol: Electron.Protocol;
-export var safeStorage: Electron.SafeStorage;
 export var screen: Electron.Screen;
 export var session: typeof Electron.session;
 export var ShareMenu: typeof Electron.ShareMenu;
