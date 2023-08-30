@@ -6,25 +6,24 @@ orbs:
 
 jobs:
   test-electron:
-    executor: node/linux
+    docker:
+      - image: cimg/node:18.12.1-browsers
     parameters:
       electron-version:
         type: integer
     steps:
-      - node/test:
-          node-version: '18.12'
-          test-steps:
-            - run: yarn add "electron@<< parameters.electron-version >>"
-            - run: yarn tsc
-            - run: |
-                if [[ << parameters.electron-version >> -eq 12 ]]; then
-                  yarn test:ci --in-process-gpu;
-                else
-                  yarn test:ci;
-                fi
-            - store_test_results:
-                path: test-results
-          use-test-steps: true
+      - checkout
+      - node/install-packages
+      - run: yarn add "electron@<< parameters.electron-version >>"
+      - run: yarn tsc
+      - run: |
+          if [[ << parameters.electron-version >> -eq 12 ]]; then
+            yarn test:ci --in-process-gpu;
+          else
+            yarn test:ci;
+          fi
+      - store_test_results:
+          path: test-results
 
 workflows:
   test_and_release:
