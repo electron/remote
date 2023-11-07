@@ -358,6 +358,11 @@ const logStack = function (contents: WebContents, code: string, stack: string | 
 }
 
 let initialized = false
+
+export function isInitialized() {
+  return initialized
+}
+
 export function initialize() {
   if (initialized)
     throw new Error('@electron/remote has already been initialized')
