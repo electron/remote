@@ -357,10 +357,10 @@ const logStack = function (contents: WebContents, code: string, stack: string | 
   }
 }
 
-let initialized = false;
+let initialized = false
 
 export function isInitialized() {
-  return initialized;
+  return initialized
 }
 
 export function initialize() {
