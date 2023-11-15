@@ -311,7 +311,7 @@ function metaToError (meta: { type: 'error', value: any, members: ObjectMember[]
 
 function handleMessage (channel: string, handler: Function) {
   ipcRenderer.on(channel, (event, passedContextId, id, ...args) => {
-    if (event.senderId !== 0) {
+    if (event.senderId !== 0 && event.senderId !== undefined) {
       console.error(`Message ${channel} sent by unexpected WebContents (${event.senderId})`);
       return;
     }
