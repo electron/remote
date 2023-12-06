@@ -887,7 +887,7 @@ describe('remote module', () => {
         } catch (e) {
           done(e)
         } finally {
-          process.off('unhandledRejection', onUnhandledRejection)
+          process.off('unhandledRejection' as any, onUnhandledRejection)
         }
       })
     })
