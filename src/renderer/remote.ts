@@ -311,8 +311,9 @@ function metaToError (meta: { type: 'error', value: any, members: ObjectMember[]
 
 function handleMessage (channel: string, handler: Function) {
   ipcRenderer.on(channel, (event, passedContextId, id, ...args) => {
-    if (event.senderId !== 0 && event.senderId !== undefined) {
-      console.error(`Message ${channel} sent by unexpected WebContents (${event.senderId})`);
+    const senderId = (event as any).senderId // Cast to any to avoid linting errors with newer Electron versions
+    if (senderId !== 0 && senderId !== undefined) {
+      console.error(`Message ${channel} sent by unexpected WebContents (${senderId})`);
       return;
     }
 
