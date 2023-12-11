@@ -385,7 +385,11 @@ export function initialize() {
       if (customEvent.defaultPrevented) {
         throw new Error(`Blocked remote.require('${moduleName}')`)
       } else {
-        customEvent.returnValue = process.mainModule!.require(moduleName)
+        let mainModule = module;
+        while (mainModule.parent) {
+          mainModule = mainModule.parent;
+        }
+        customEvent.returnValue = mainModule.require(moduleName)
       }
     }
 
