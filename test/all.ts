@@ -498,7 +498,12 @@ describe('remote module', () => {
       expect(a.getConstructorName(new (class {})())).to.equal('')
     })
 
-    it('should search module from the user app', async () => {
+    /* TODO: Electron 28 removed process.mainModule, so we need to find an alternative way to test that the remotely 
+       required module in the renderer uses the same main module as the main process. In src/main/server.ts:388 we do so 
+       by looping over the module parents until getting the top most one and using their require, but that require 
+       doesn't send along the module paths, so we can't use it here. */
+       
+    it.skip('should search module from the user app', async () => {
       expectPathsEqual(
         path.normalize(await remotely(() => require('./renderer').process.mainModule!.filename)),
         path.resolve(__dirname, 'index.js')
@@ -887,7 +892,7 @@ describe('remote module', () => {
         } catch (e) {
           done(e)
         } finally {
-          process.off('unhandledRejection', onUnhandledRejection)
+          process.off('unhandledRejection' as any, onUnhandledRejection)
         }
       })
     })

@@ -1,7 +1,7 @@
 import { CallbacksRegistry } from './callbacks-registry'
 import { isPromise, isSerializableObject, serialize, deserialize } from '../common/type-utils'
 import { MetaTypeFromRenderer, ObjectMember, ObjProtoDescriptor, MetaType } from '../common/types'
-import { BrowserWindow, WebContents, ipcRenderer } from 'electron'
+import { BrowserWindow, WebContents, ipcRenderer, IpcRendererEvent } from 'electron'
 import { browserModuleNames } from '../common/module-names'
 import { getElectronBinding } from '../common/get-electron-binding'
 import { IPC_MESSAGES } from '../common/ipc-messages';
@@ -309,11 +309,22 @@ function metaToError (meta: { type: 'error', value: any, members: ObjectMember[]
   return obj
 }
 
+// Backwards compatibility interface for Electron < v28
+interface IpcRendererEventWithSenderId extends IpcRendererEvent {
+	senderId: number
+}
+
+function hasSenderId(input: any): input is IpcRendererEventWithSenderId {
+	return typeof input.senderId === "number"
+}
+
 function handleMessage (channel: string, handler: Function) {
   ipcRenderer.on(channel, (event, passedContextId, id, ...args) => {
-    if (event.senderId !== 0) {
-      console.error(`Message ${channel} sent by unexpected WebContents (${event.senderId})`);
-      return;
+    if (hasSenderId(event)) {
+      if (event.senderId !== 0 && event.senderId !== undefined) {
+        console.error(`Message ${channel} sent by unexpected WebContents (${event.senderId})`);
+        return;
+      }
     }
 
     if (passedContextId === contextId) {
