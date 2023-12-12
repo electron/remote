@@ -385,11 +385,17 @@ export function initialize() {
       if (customEvent.defaultPrevented) {
         throw new Error(`Blocked remote.require('${moduleName}')`)
       } else {
-        let mainModule = module;
-        while (mainModule.parent) {
-          mainModule = mainModule.parent;
+        // electron < 28
+        if(process.mainModule) {
+          customEvent.returnValue = process.mainModule!.require(moduleName)
+        } else {
+          // electron >= 28
+          let mainModule = module;
+          while (mainModule.parent) {
+            mainModule = mainModule.parent;
+          }
+          customEvent.returnValue = mainModule.require(moduleName)
         }
-        customEvent.returnValue = mainModule.require(moduleName)
       }
     }
 
