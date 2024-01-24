@@ -50,6 +50,6 @@ if (features?.isDesktopCapturerEnabled?.() !== false) {
   browserModuleNames.push('desktopCapturer');
 }
 
-if (!features || features.isViewApiEnabled()) {
+if (features?.isViewApiEnabled?.() !== false) {
   browserModuleNames.push('ImageView');
 }
