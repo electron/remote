@@ -17,7 +17,7 @@ Electron, which is deprecated and will eventually be removed.
 
 ## Migrating from `remote`
 
-> **NOTE:** `@electron/remote` requires Electron 10 or higher.
+> **NOTE:** `@electron/remote` requires Electron 13 or higher.
 
 There are three things you need to do to migrate from the built-in `remote`
 module to `@electron/remote`.
