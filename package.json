@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/electron/remote"
+    "url": "git+https://github.com/electron/remote.git"
   },
   "peerDependencies": {
     "electron": ">= 13.0.0"
