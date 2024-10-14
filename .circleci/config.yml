@@ -52,6 +52,8 @@ workflows:
                 - 29
                 - 30
                 - 31
+                - 32
+                - 33
       - cfa/release:
           requires:
             - test-electron
