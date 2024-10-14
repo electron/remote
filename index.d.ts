@@ -1,4 +1,5 @@
 import * as Electron from 'electron';
+import { WebContentsView } from './src/main/index';
 
 export {
   ClientRequest,
@@ -56,6 +57,9 @@ export var TouchBar: typeof Electron.TouchBar;
 export var Tray: typeof Electron.Tray;
 export var webContents: typeof Electron.webContents;
 export var webFrameMain: typeof Electron.webFrameMain;
+
+// Taken from `RemoteMainInterface` but WebContentsView is only available in Electron >= 29.0.0
+export { WebContentsView };
 
 // Taken from `Remote`
 export function getCurrentWebContents(): Electron.WebContents;
