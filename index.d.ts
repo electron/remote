@@ -1,5 +1,5 @@
 import * as Electron from 'electron';
-import { WebContentsView } from './src/main/index';
+import { WebContentsView } from './index';
 
 export {
   ClientRequest,
