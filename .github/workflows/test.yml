@@ -30,7 +30,9 @@ jobs:
           - 22
           - 23
           - 24
-          - 25
+          # Electron v25 is consistently hanging
+          # when tests run on GHA so skip for now
+          # - 25
           - 26
           - 27
           - 28
