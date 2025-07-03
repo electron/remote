@@ -6,6 +6,8 @@ export const commonModuleNames = [
   'shell',
 ];
 
+const mainModules = Object.keys(require('electron'))
+
 export const browserModuleNames = [
   'app',
   'autoUpdater',
@@ -53,3 +55,8 @@ if (features?.isDesktopCapturerEnabled?.() !== false) {
 if (features?.isViewApiEnabled?.() !== false) {
   browserModuleNames.push('ImageView');
 }
+
+try {
+  getElectronBinding('electron_browser_service_worker_main');
+  browserModuleNames.push('ServiceWorkerMain');
+} catch {}
