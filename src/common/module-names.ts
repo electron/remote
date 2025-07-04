@@ -6,8 +6,6 @@ export const commonModuleNames = [
   'shell',
 ];
 
-const mainModules = Object.keys(require('electron'))
-
 export const browserModuleNames = [
   'app',
   'autoUpdater',
@@ -57,6 +55,6 @@ if (features?.isViewApiEnabled?.() !== false) {
 }
 
 try {
-  getElectronBinding('electron_browser_service_worker_main');
+  (process as any)._linkedBinding('electron_browser_service_worker_main');
   browserModuleNames.push('ServiceWorkerMain');
 } catch {}
