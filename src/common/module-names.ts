@@ -54,7 +54,5 @@ if (features?.isViewApiEnabled?.() !== false) {
   browserModuleNames.push('ImageView');
 }
 
-try {
-  (process as any)._linkedBinding('electron_browser_service_worker_main');
-  browserModuleNames.push('ServiceWorkerMain');
-} catch {}
+(process as any)._linkedBinding('electron_browser_service_worker_main');
+browserModuleNames.push('ServiceWorkerMain');
