@@ -32,6 +32,7 @@ export const browserModuleNames = [
   'safeStorage',
   'screen',
   'session',
+  'ServiceWorkerMain',
   'ShareMenu',
   'systemPreferences',
   'TopLevelWindow',
