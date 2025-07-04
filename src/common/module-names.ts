@@ -54,5 +54,6 @@ if (features?.isViewApiEnabled?.() !== false) {
   browserModuleNames.push('ImageView');
 }
 
-(process as any)._linkedBinding('electron_browser_service_worker_main');
-browserModuleNames.push('ServiceWorkerMain');
+if ('ServiceWorkerMain' in Object.keys(require('electron'))) {
+  browserModuleNames.push('ServiceWorkerMain');
+}
