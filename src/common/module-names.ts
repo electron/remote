@@ -54,6 +54,6 @@ if (features?.isViewApiEnabled?.() !== false) {
   browserModuleNames.push('ImageView');
 }
 
-if (Object.keys(require('electron')).includes('ServiceWorkerMain')) {
+if (true || Object.keys(require('electron')).includes('ServiceWorkerMain')) {
   browserModuleNames.push('ServiceWorkerMain');
 }
