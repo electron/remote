@@ -47,6 +47,7 @@ jobs:
           - 36
           - 37
           - 38
+          - 39
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
