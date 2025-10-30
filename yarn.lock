@@ -44,6 +44,9 @@ __metadata:
     typescript: "npm:^4.1.3"
   peerDependencies:
     electron: ">= 13.0.0"
+  dependenciesMeta:
+    electron:
+      built: true
   languageName: unknown
   linkType: soft
 
