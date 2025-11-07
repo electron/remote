@@ -55,12 +55,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
-          node-version: '18.20'
+          node-version: '22.x'
           cache: 'yarn'
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
       - name: Install Electron
-        run: yarn add "electron@${{ matrix.electron-version }}"
+        run: yarn add "electron@${{ matrix.electron-version }}" -P
       - name: Build
         run: yarn tsc
       - name: Test (Electron 12)
