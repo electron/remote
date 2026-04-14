@@ -1,29 +1,28 @@
-'use strict'
+'use strict';
 
-let value = 'old'
+let value = 'old';
 
 class BaseClass {
-  method () {
-    return 'method'
+  method() {
+    return 'method';
   }
 
-  get readonly () {
-    return 'readonly'
+  get readonly() {
+    return 'readonly';
   }
 
-  get value () {
-    return value
+  get value() {
+    return value;
   }
 
-  set value (val) {
-    value = val
+  set value(val) {
+    value = val;
   }
 }
 
-class DerivedClass extends BaseClass {
-}
+class DerivedClass extends BaseClass {}
 
 module.exports = {
   base: new BaseClass(),
-  derived: new DerivedClass()
-}
+  derived: new DerivedClass(),
+};

@@ -11,7 +11,7 @@ declare namespace NodeJS {
   }
 
   interface EventBinding {
-    createWithSender(contents: Electron.WebContents): Electron.Event & { returnValue: any }
+    createWithSender(contents: Electron.WebContents): Electron.Event & { returnValue: any };
   }
 
   interface FeaturesBinding {

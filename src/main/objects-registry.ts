@@ -1,128 +1,127 @@
-import { WebContents } from 'electron'
+import { WebContents } from 'electron';
 
 const getOwnerKey = (webContents: WebContents, contextId: string) => {
-  return `${webContents.id}-${contextId}`
-}
+  return `${webContents.id}-${contextId}`;
+};
 
 class ObjectsRegistry {
-  private nextId: number = 0
+  private nextId: number = 0;
 
   // Stores all objects by ref-counting.
   // (id) => {object, count}
-  private storage: Record<number, { count: number, object: any }> = {}
+  private storage: Record<number, { count: number; object: any }> = {};
 
   // Stores the IDs + refCounts of objects referenced by WebContents.
   // (ownerKey) => { id: refCount }
-  private owners: Record<string, Map<number, number>> = {}
+  private owners: Record<string, Map<number, number>> = {};
 
-  private electronIds = new WeakMap<Object, number>();
+  private electronIds = new WeakMap<object, number>();
 
   // Register a new object and return its assigned ID. If the object is already
   // registered then the already assigned ID would be returned.
-  add (webContents: WebContents, contextId: string, obj: any): number {
+  add(webContents: WebContents, contextId: string, obj: any): number {
     // Get or assign an ID to the object.
-    const id = this.saveToStorage(obj)
+    const id = this.saveToStorage(obj);
 
     // Add object to the set of referenced objects.
-    const ownerKey = getOwnerKey(webContents, contextId)
-    let owner = this.owners[ownerKey]
+    const ownerKey = getOwnerKey(webContents, contextId);
+    let owner = this.owners[ownerKey];
     if (!owner) {
-      owner = this.owners[ownerKey] = new Map()
-      this.registerDeleteListener(webContents, contextId)
+      owner = this.owners[ownerKey] = new Map();
+      this.registerDeleteListener(webContents, contextId);
     }
     if (!owner.has(id)) {
-      owner.set(id, 0)
+      owner.set(id, 0);
       // Increase reference count if not referenced before.
-      this.storage[id].count++
+      this.storage[id].count++;
     }
 
-    owner.set(id, owner.get(id)! + 1)
-    return id
+    owner.set(id, owner.get(id)! + 1);
+    return id;
   }
 
   // Get an object according to its ID.
-  get (id: number): any {
-    const pointer = this.storage[id]
-    if (pointer != null) return pointer.object
+  get(id: number): any {
+    const pointer = this.storage[id];
+    if (pointer != null) return pointer.object;
   }
 
   // Dereference an object according to its ID.
   // Note that an object may be double-freed (cleared when page is reloaded, and
   // then garbage collected in old page).
-  remove (webContents: WebContents, contextId: string, id: number): void {
-    const ownerKey = getOwnerKey(webContents, contextId)
-    const owner = this.owners[ownerKey]
+  remove(webContents: WebContents, contextId: string, id: number): void {
+    const ownerKey = getOwnerKey(webContents, contextId);
+    const owner = this.owners[ownerKey];
     if (owner && owner.has(id)) {
-      const newRefCount = owner.get(id)! - 1
+      const newRefCount = owner.get(id)! - 1;
 
       // Only completely remove if the number of references GCed in the
       // renderer is the same as the number of references we sent them
       if (newRefCount <= 0) {
         // Remove the reference in owner.
-        owner.delete(id)
+        owner.delete(id);
         // Dereference from the storage.
-        this.dereference(id)
+        this.dereference(id);
       } else {
-        owner.set(id, newRefCount)
+        owner.set(id, newRefCount);
       }
     }
   }
 
   // Clear all references to objects refrenced by the WebContents.
-  clear (webContents: WebContents, contextId: string): void {
-    const ownerKey = getOwnerKey(webContents, contextId)
-    const owner = this.owners[ownerKey]
-    if (!owner) return
+  clear(webContents: WebContents, contextId: string): void {
+    const ownerKey = getOwnerKey(webContents, contextId);
+    const owner = this.owners[ownerKey];
+    if (!owner) return;
 
-    for (const id of owner.keys()) this.dereference(id)
+    for (const id of owner.keys()) this.dereference(id);
 
-    delete this.owners[ownerKey]
+    delete this.owners[ownerKey];
   }
 
   // Saves the object into storage and assigns an ID for it.
-  private saveToStorage (object: any): number {
-    let id = this.electronIds.get(object)
+  private saveToStorage(object: any): number {
+    let id = this.electronIds.get(object);
     if (!id) {
-      id = ++this.nextId
+      id = ++this.nextId;
       this.storage[id] = {
         count: 0,
-        object: object
-      }
+        object: object,
+      };
       this.electronIds.set(object, id);
     }
-    return id
+    return id;
   }
 
   // Dereference the object from store.
-  private dereference (id: number): void {
-    const pointer = this.storage[id]
+  private dereference(id: number): void {
+    const pointer = this.storage[id];
     if (pointer == null) {
-      return
+      return;
     }
-    pointer.count -= 1
+    pointer.count -= 1;
     if (pointer.count === 0) {
       this.electronIds.delete(pointer.object);
-      delete this.storage[id]
+      delete this.storage[id];
     }
   }
 
   // Clear the storage when renderer process is destroyed.
-  private registerDeleteListener (webContents: WebContents, contextId: string): void {
+  private registerDeleteListener(webContents: WebContents, contextId: string): void {
     // contextId => ${processHostId}-${contextCount}
-    const processHostId = contextId.split('-')[0]
+    const processHostId = contextId.split('-')[0];
     const listener = (_: any, deletedProcessHostId: string) => {
-      if (deletedProcessHostId &&
-          deletedProcessHostId.toString() === processHostId) {
-        webContents.removeListener('render-view-deleted' as any, listener)
-        this.clear(webContents, contextId)
+      if (deletedProcessHostId && deletedProcessHostId.toString() === processHostId) {
+        webContents.removeListener('render-view-deleted' as any, listener);
+        this.clear(webContents, contextId);
       }
-    }
+    };
     // Note that the "render-view-deleted" event may not be emitted on time when
     // the renderer process get destroyed because of navigation, we rely on the
     // renderer process to send "ELECTRON_BROWSER_CONTEXT_RELEASE" message to
     // guard this situation.
-    webContents.on('render-view-deleted' as any, listener)
+    webContents.on('render-view-deleted' as any, listener);
   }
 }
 
-export default new ObjectsRegistry()
+export default new ObjectsRegistry();

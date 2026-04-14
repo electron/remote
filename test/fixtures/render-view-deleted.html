@@ -1,33 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title></title>
     <script>
-      const {ipcRenderer} = require('electron')
-      const remote = require('../../renderer')
+      const { ipcRenderer } = require('electron');
+      const remote = require('../../renderer');
 
-      const contents = remote.getCurrentWebContents()
+      const contents = remote.getCurrentWebContents();
 
       // This should not trigger a dereference and a remote getURL call should not fail
-      contents.emit('render-view-deleted', {}, 'not-a-process-id')
+      contents.emit('render-view-deleted', {}, 'not-a-process-id');
       try {
-        contents.getURL()
+        contents.getURL();
       } catch (error) {
-        ipcRenderer.send('error-message', 'Unexpected error on getURL call')
+        ipcRenderer.send('error-message', 'Unexpected error on getURL call');
       }
 
       // This should trigger a dereference and a remote getURL call should fail
-      contents.emit('render-view-deleted', {}, contents.getProcessId())
+      contents.emit('render-view-deleted', {}, contents.getProcessId());
       try {
-        contents.getURL()
-        ipcRenderer.send('error-message', 'No error thrown')
+        contents.getURL();
+        ipcRenderer.send('error-message', 'No error thrown');
       } catch (error) {
-        ipcRenderer.send('error-message', error.message)
+        ipcRenderer.send('error-message', error.message);
       }
     </script>
   </head>
-  <body>
-
-  </body>
+  <body></body>
 </html>

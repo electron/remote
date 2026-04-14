@@ -1,29 +1,35 @@
 /// <reference path="../src/internal-ambient.d.ts" />
-import { enable, initialize } from '../src/main'
-import { expect } from 'chai'
-import * as path from 'path'
-import { ipcMain, BrowserWindow, protocol, nativeImage, NativeImage, app, WebContents } from 'electron'
+import { enable, initialize } from '../src/main';
+import { expect } from 'chai';
+import * as path from 'path';
+import {
+  ipcMain,
+  BrowserWindow,
+  protocol,
+  nativeImage,
+  NativeImage,
+  app,
+  WebContents,
+} from 'electron';
 
-
-import { closeAllWindows } from './window-helpers'
-import { emittedOnce } from './events-helpers'
-import { serialize, deserialize } from '../src/common/type-utils'
+import { closeAllWindows } from './window-helpers';
+import { emittedOnce } from './events-helpers';
+import { serialize, deserialize } from '../src/common/type-utils';
 
 before(() => {
-  initialize()
-})
-
+  initialize();
+});
 
 const expectPathsEqual = (path1: string, path2: string) => {
   if (process.platform === 'win32') {
-    path1 = path1.toLowerCase()
-    path2 = path2.toLowerCase()
+    path1 = path1.toLowerCase();
+    path2 = path2.toLowerCase();
   }
-  expect(path1).to.equal(path2)
-}
+  expect(path1).to.equal(path2);
+};
 
-function makeRemotely (windowGetter: () => BrowserWindow) {
-  async function remotely (script: Function, ...args: any[]) {
+function makeRemotely(windowGetter: () => BrowserWindow) {
+  async function remotely(script: Function, ...args: any[]) {
     // executeJavaScript obfuscates the error if the script throws, so catch any
     // errors manually.
     const assembledScript = `(async function() {
@@ -32,312 +38,351 @@ function makeRemotely (windowGetter: () => BrowserWindow) {
       } catch (e) {
         return { error: e.message, stack: e.stack }
       }
-    })()`
-    const { result, error, stack } = await windowGetter().webContents.executeJavaScript(assembledScript)
+    })()`;
+    const { result, error, stack } =
+      await windowGetter().webContents.executeJavaScript(assembledScript);
     if (error) {
-      const e = new Error(error)
-      e.stack = stack
-      throw e
+      const e = new Error(error);
+      e.stack = stack;
+      throw e;
     }
-    return result
+    return result;
   }
-  remotely.it = (...vars: any[]) => (name: string, fn: Function) => {
-    it(name, async () => {
-      await remotely(fn, ...vars)
-    })
-  }
-  return remotely
+  remotely.it =
+    (...vars: any[]) =>
+    (name: string, fn: Function) => {
+      it(name, async () => {
+        await remotely(fn, ...vars);
+      });
+    };
+  return remotely;
 }
 
-function makeWindow () {
-  let w: BrowserWindow
+function makeWindow() {
+  let w: BrowserWindow;
   before(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false } })
-    enable(w.webContents)
-    await w.loadURL('about:blank')
+    w = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: true, contextIsolation: false },
+    });
+    enable(w.webContents);
+    await w.loadURL('about:blank');
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
       chai_1.use(require('chai-as-promised'))
       chai_1.use(require('dirty-chai'))
       null
-    }`)
-  })
-  after(closeAllWindows)
-  return () => w
+    }`);
+  });
+  after(closeAllWindows);
+  return () => w;
 }
 
-function makeEachWindow () {
-  let w: BrowserWindow
+function makeEachWindow() {
+  let w: BrowserWindow;
   beforeEach(async () => {
-    w = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true, contextIsolation: false } })
-    enable(w.webContents)
-    await w.loadURL('about:blank')
+    w = new BrowserWindow({
+      show: false,
+      webPreferences: { nodeIntegration: true, contextIsolation: false },
+    });
+    enable(w.webContents);
+    await w.loadURL('about:blank');
     await w.webContents.executeJavaScript(`{
       const chai_1 = window.chai_1 = require('chai')
       chai_1.use(require('chai-as-promised'))
       chai_1.use(require('dirty-chai'))
       null
-    }`)
-  })
-  afterEach(closeAllWindows)
-  return () => w
+    }`);
+  });
+  afterEach(closeAllWindows);
+  return () => w;
 }
 
 describe('typeUtils serialization/deserialization', () => {
   it('serializes and deserializes an empty NativeImage', () => {
-    const image = nativeImage.createEmpty()
-    const serializedImage = serialize(image)
-    const empty = deserialize(serializedImage)
+    const image = nativeImage.createEmpty();
+    const serializedImage = serialize(image);
+    const empty = deserialize(serializedImage);
 
-    expect(empty.isEmpty()).to.be.true()
-    expect(empty.getAspectRatio()).to.equal(1)
-    expect(empty.toDataURL()).to.equal('data:image/png;base64,')
-    expect(empty.toDataURL({ scaleFactor: 2.0 })).to.equal('data:image/png;base64,')
-    expect(empty.getSize()).to.deep.equal({ width: 0, height: 0 })
-    expect(empty.getBitmap()).to.be.empty()
-    expect(empty.getBitmap({ scaleFactor: 2.0 })).to.be.empty()
-    expect(empty.toBitmap()).to.be.empty()
-    expect(empty.toBitmap({ scaleFactor: 2.0 })).to.be.empty()
-    expect(empty.toJPEG(100)).to.be.empty()
-    expect(empty.toPNG()).to.be.empty()
-    expect(empty.toPNG({ scaleFactor: 2.0 })).to.be.empty()
-  })
+    expect(empty.isEmpty()).to.be.true();
+    expect(empty.getAspectRatio()).to.equal(1);
+    expect(empty.toDataURL()).to.equal('data:image/png;base64,');
+    expect(empty.toDataURL({ scaleFactor: 2.0 })).to.equal('data:image/png;base64,');
+    expect(empty.getSize()).to.deep.equal({ width: 0, height: 0 });
+    expect(empty.getBitmap()).to.be.empty();
+    expect(empty.getBitmap({ scaleFactor: 2.0 })).to.be.empty();
+    expect(empty.toBitmap()).to.be.empty();
+    expect(empty.toBitmap({ scaleFactor: 2.0 })).to.be.empty();
+    expect(empty.toJPEG(100)).to.be.empty();
+    expect(empty.toPNG()).to.be.empty();
+    expect(empty.toPNG({ scaleFactor: 2.0 })).to.be.empty();
+  });
 
   it('serializes and deserializes a non-empty NativeImage', () => {
-    const dataURL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg=='
-    const image = nativeImage.createFromDataURL(dataURL)
-    const serializedImage = serialize(image)
-    const nonEmpty = deserialize(serializedImage)
+    const dataURL =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==';
+    const image = nativeImage.createFromDataURL(dataURL);
+    const serializedImage = serialize(image);
+    const nonEmpty = deserialize(serializedImage);
 
-    expect(nonEmpty.isEmpty()).to.be.false()
-    expect(nonEmpty.getAspectRatio()).to.equal(1)
-    expect(nonEmpty.toDataURL()).to.not.be.empty()
-    expect(nonEmpty.toBitmap({ scaleFactor: 1.0 })).to.deep.equal(image.toBitmap({ scaleFactor: 1.0 }))
-    expect(nonEmpty.getSize()).to.deep.equal({ width: 2, height: 2 })
-    expect(nonEmpty.getBitmap()).to.not.be.empty()
-    expect(nonEmpty.toPNG()).to.not.be.empty()
-  })
+    expect(nonEmpty.isEmpty()).to.be.false();
+    expect(nonEmpty.getAspectRatio()).to.equal(1);
+    expect(nonEmpty.toDataURL()).to.not.be.empty();
+    expect(nonEmpty.toBitmap({ scaleFactor: 1.0 })).to.deep.equal(
+      image.toBitmap({ scaleFactor: 1.0 }),
+    );
+    expect(nonEmpty.getSize()).to.deep.equal({ width: 2, height: 2 });
+    expect(nonEmpty.getBitmap()).to.not.be.empty();
+    expect(nonEmpty.toPNG()).to.not.be.empty();
+  });
 
   it('serializes and deserializes a non-empty NativeImage with multiple representations', () => {
-    const image = nativeImage.createEmpty()
+    const image = nativeImage.createEmpty();
 
-    const dataURL1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYlWNgAAIAAAUAAdafFs0AAAAASUVORK5CYII='
-    image.addRepresentation({ scaleFactor: 1.0, dataURL: dataURL1 })
+    const dataURL1 =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQYlWNgAAIAAAUAAdafFs0AAAAASUVORK5CYII=';
+    image.addRepresentation({ scaleFactor: 1.0, dataURL: dataURL1 });
 
-    const dataURL2 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg=='
-    image.addRepresentation({ scaleFactor: 2.0, dataURL: dataURL2 })
+    const dataURL2 =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==';
+    image.addRepresentation({ scaleFactor: 2.0, dataURL: dataURL2 });
 
-    const serializedImage = serialize(image)
-    const nonEmpty = deserialize(serializedImage)
+    const serializedImage = serialize(image);
+    const nonEmpty = deserialize(serializedImage);
 
-    expect(nonEmpty.isEmpty()).to.be.false()
-    expect(nonEmpty.getAspectRatio()).to.equal(1)
-    expect(nonEmpty.getSize()).to.deep.equal({ width: 1, height: 1 })
-    expect(nonEmpty.getBitmap()).to.not.be.empty()
-    expect(nonEmpty.getBitmap({ scaleFactor: 1.0 })).to.not.be.empty()
-    expect(nonEmpty.getBitmap({ scaleFactor: 2.0 })).to.not.be.empty()
-    expect(nonEmpty.toBitmap()).to.not.be.empty()
-    expect(nonEmpty.toBitmap({ scaleFactor: 1.0 })).to.deep.equal(image.toBitmap({ scaleFactor: 1.0 }))
-    expect(nonEmpty.toBitmap({ scaleFactor: 2.0 })).to.deep.equal(image.toBitmap({ scaleFactor: 2.0 }))
-    expect(nonEmpty.toPNG()).to.not.be.empty()
-    expect(nonEmpty.toPNG({ scaleFactor: 1.0 })).to.not.be.empty()
-    expect(nonEmpty.toPNG({ scaleFactor: 2.0 })).to.not.be.empty()
-    expect(nonEmpty.toDataURL()).to.not.be.empty()
-  })
+    expect(nonEmpty.isEmpty()).to.be.false();
+    expect(nonEmpty.getAspectRatio()).to.equal(1);
+    expect(nonEmpty.getSize()).to.deep.equal({ width: 1, height: 1 });
+    expect(nonEmpty.getBitmap()).to.not.be.empty();
+    expect(nonEmpty.getBitmap({ scaleFactor: 1.0 })).to.not.be.empty();
+    expect(nonEmpty.getBitmap({ scaleFactor: 2.0 })).to.not.be.empty();
+    expect(nonEmpty.toBitmap()).to.not.be.empty();
+    expect(nonEmpty.toBitmap({ scaleFactor: 1.0 })).to.deep.equal(
+      image.toBitmap({ scaleFactor: 1.0 }),
+    );
+    expect(nonEmpty.toBitmap({ scaleFactor: 2.0 })).to.deep.equal(
+      image.toBitmap({ scaleFactor: 2.0 }),
+    );
+    expect(nonEmpty.toPNG()).to.not.be.empty();
+    expect(nonEmpty.toPNG({ scaleFactor: 1.0 })).to.not.be.empty();
+    expect(nonEmpty.toPNG({ scaleFactor: 2.0 })).to.not.be.empty();
+    expect(nonEmpty.toDataURL()).to.not.be.empty();
+  });
 
   it('serializes and deserializes an Array', () => {
-    const array = [1, 2, 3, 4, 5]
-    const serialized = serialize(array)
-    const deserialized = deserialize(serialized)
+    const array = [1, 2, 3, 4, 5];
+    const serialized = serialize(array);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.deep.equal(array)
-  })
+    expect(deserialized).to.deep.equal(array);
+  });
 
   it('serializes and deserializes a Buffer', () => {
-    const buffer = Buffer.from('hello world!', 'utf-8')
-    const serialized = serialize(buffer)
-    const deserialized = deserialize(serialized)
+    const buffer = Buffer.from('hello world!', 'utf-8');
+    const serialized = serialize(buffer);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.deep.equal(buffer)
-  })
+    expect(deserialized).to.deep.equal(buffer);
+  });
 
   it('serializes and deserializes a Boolean', () => {
-    const bool = true
-    const serialized = serialize(bool)
-    const deserialized = deserialize(serialized)
+    const bool = true;
+    const serialized = serialize(bool);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.equal(bool)
-  })
+    expect(deserialized).to.equal(bool);
+  });
 
   it('serializes and deserializes a Date', () => {
-    const date = new Date()
-    const serialized = serialize(date)
-    const deserialized = deserialize(serialized)
+    const date = new Date();
+    const serialized = serialize(date);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.equal(date)
-  })
+    expect(deserialized).to.equal(date);
+  });
 
   it('serializes and deserializes a Number', () => {
-    const number = 42
-    const serialized = serialize(number)
-    const deserialized = deserialize(serialized)
+    const number = 42;
+    const serialized = serialize(number);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.equal(number)
-  })
+    expect(deserialized).to.equal(number);
+  });
 
   it('serializes and deserializes a Regexp', () => {
-    const regex = new RegExp('ab+c')
-    const serialized = serialize(regex)
-    const deserialized = deserialize(serialized)
+    const regex = new RegExp('ab+c');
+    const serialized = serialize(regex);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.equal(regex)
-  })
+    expect(deserialized).to.equal(regex);
+  });
 
   it('serializes and deserializes a String', () => {
-    const str = 'hello world'
-    const serialized = serialize(str)
-    const deserialized = deserialize(serialized)
+    const str = 'hello world';
+    const serialized = serialize(str);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.equal(str)
-  })
+    expect(deserialized).to.equal(str);
+  });
 
   it('serializes and deserializes an Error', () => {
-    const err = new Error('oh crap')
-    const serialized = serialize(err)
-    const deserialized = deserialize(serialized)
+    const err = new Error('oh crap');
+    const serialized = serialize(err);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.equal(err)
-  })
+    expect(deserialized).to.equal(err);
+  });
 
   it('serializes and deserializes a simple Object', () => {
-    const obj = { hello: 'world', 'answer-to-everything': 42 }
-    const serialized = serialize(obj)
-    const deserialized = deserialize(serialized)
+    const obj = { hello: 'world', 'answer-to-everything': 42 };
+    const serialized = serialize(obj);
+    const deserialized = deserialize(serialized);
 
-    expect(deserialized).to.deep.equal(obj)
-  })
-})
+    expect(deserialized).to.deep.equal(obj);
+  });
+});
 
 describe('remote module', () => {
-  const fixtures = path.join(__dirname, 'fixtures')
+  const fixtures = path.join(__dirname, 'fixtures');
 
   describe('filtering', () => {
-    const w = makeWindow()
-    const remotely = makeRemotely(w)
+    const w = makeWindow();
+    const remotely = makeRemotely(w);
 
     const emitters = [
-      {name: 'webContents', f: () => w().webContents},
-      {name: 'app', f: () => app}
-    ]
-    for (const {name, f} of emitters) {
-      const emitter = f as any as () => any
-      const returnFirstArg = name === 'app' ? (e: any, _: any, a: any) => e.returnValue = a : (e: any, a: any) => e.returnValue = a
-      const returnConstant = (k: any) => (e: any) => e.returnValue = k
-      const preventDefault = (e: any) => e.preventDefault()
+      { name: 'webContents', f: () => w().webContents },
+      { name: 'app', f: () => app },
+    ];
+    for (const { name, f } of emitters) {
+      const emitter = f as any as () => any;
+      const returnFirstArg =
+        name === 'app'
+          ? (e: any, _: any, a: any) => (e.returnValue = a)
+          : (e: any, a: any) => (e.returnValue = a);
+      const returnConstant = (k: any) => (e: any) => (e.returnValue = k);
+      const preventDefault = (e: any) => e.preventDefault();
       describe(name, () => {
         describe('remote.getGlobal', () => {
           it('can return custom values', async () => {
-            emitter().once('remote-get-global' as any, returnFirstArg)
-            expect(await remotely(() => require('./renderer').getGlobal('test'))).to.equal('test')
-          })
+            emitter().once('remote-get-global' as any, returnFirstArg);
+            expect(await remotely(() => require('./renderer').getGlobal('test'))).to.equal('test');
+          });
 
           it('throws when no returnValue set', async () => {
-            emitter().once('remote-get-global' as any, preventDefault)
-            await expect(remotely(() => require('./renderer').getGlobal('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
-          })
-        })
+            emitter().once('remote-get-global' as any, preventDefault);
+            await expect(
+              remotely(() => require('./renderer').getGlobal('test')),
+            ).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`);
+          });
+        });
 
         describe('remote.getBuiltin', () => {
           it('can return custom values', async () => {
-            emitter().once('remote-get-builtin', returnFirstArg)
-            expect(await remotely(() => (require('./renderer') as any).getBuiltin('test'))).to.equal('test')
-          })
+            emitter().once('remote-get-builtin', returnFirstArg);
+            expect(
+              await remotely(() => (require('./renderer') as any).getBuiltin('test')),
+            ).to.equal('test');
+          });
 
           it('throws when no returnValue set', async () => {
-            emitter().once('remote-get-builtin', preventDefault)
-            await expect(remotely(() => (require('./renderer') as any).getBuiltin('test'))).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`)
-          })
-        })
+            emitter().once('remote-get-builtin', preventDefault);
+            await expect(
+              remotely(() => (require('./renderer') as any).getBuiltin('test')),
+            ).to.eventually.be.rejected(`Blocked remote.getGlobal('test')`);
+          });
+        });
 
         describe('remote.require', () => {
           it('can return custom values', async () => {
-            emitter().once('remote-require', returnFirstArg)
-            expect(await remotely(() => require('./renderer').require('test'))).to.equal('test')
-          })
+            emitter().once('remote-require', returnFirstArg);
+            expect(await remotely(() => require('./renderer').require('test'))).to.equal('test');
+          });
 
           it('throws when no returnValue set', async () => {
-            emitter().once('remote-require', preventDefault)
-            await expect(remotely(() => require('./renderer').require('test'))).to.eventually.be.rejected(`Blocked remote.require('test')`)
-          })
-        })
+            emitter().once('remote-require', preventDefault);
+            await expect(
+              remotely(() => require('./renderer').require('test')),
+            ).to.eventually.be.rejected(`Blocked remote.require('test')`);
+          });
+        });
 
         describe('remote.getCurrentWindow', () => {
           it('can return custom value', async () => {
-            emitter().once('remote-get-current-window', returnConstant('some window'))
-            expect(await remotely(() => require('./renderer').getCurrentWindow())).to.equal('some window')
-          })
+            emitter().once('remote-get-current-window', returnConstant('some window'));
+            expect(await remotely(() => require('./renderer').getCurrentWindow())).to.equal(
+              'some window',
+            );
+          });
 
           it('throws when no returnValue set', async () => {
-            emitter().once('remote-get-current-window', preventDefault)
-            await expect(remotely(() => require('./renderer').getCurrentWindow())).to.eventually.be.rejected(`Blocked remote.getCurrentWindow()`)
-          })
-        })
+            emitter().once('remote-get-current-window', preventDefault);
+            await expect(
+              remotely(() => require('./renderer').getCurrentWindow()),
+            ).to.eventually.be.rejected(`Blocked remote.getCurrentWindow()`);
+          });
+        });
 
         describe('remote.getCurrentWebContents', () => {
           it('can return custom value', async () => {
-            emitter().once('remote-get-current-web-contents', returnConstant('some web contents'))
-            expect(await remotely(() => require('./renderer').getCurrentWebContents())).to.equal('some web contents')
-          })
+            emitter().once('remote-get-current-web-contents', returnConstant('some web contents'));
+            expect(await remotely(() => require('./renderer').getCurrentWebContents())).to.equal(
+              'some web contents',
+            );
+          });
 
           it('throws when no returnValue set', async () => {
-            emitter().once('remote-get-current-web-contents', preventDefault)
-            await expect(remotely(() => require('./renderer').getCurrentWebContents())).to.eventually.be.rejected(`Blocked remote.getCurrentWebContents()`)
-          })
-        })
-      })
+            emitter().once('remote-get-current-web-contents', preventDefault);
+            await expect(
+              remotely(() => require('./renderer').getCurrentWebContents()),
+            ).to.eventually.be.rejected(`Blocked remote.getCurrentWebContents()`);
+          });
+        });
+      });
     }
-  })
+  });
 
   describe('remote references', () => {
-    const w = makeEachWindow()
+    const w = makeEachWindow();
     it('render-view-deleted is sent when page is destroyed', (done) => {
       w().webContents.once('render-view-deleted' as any, () => {
-        done()
-      })
-      w().destroy()
-    })
+        done();
+      });
+      w().destroy();
+    });
 
     // The ELECTRON_BROWSER_CONTEXT_RELEASE message relies on this to work.
     it('message can be sent on exit when page is being navigated', async () => {
-      after(() => { ipcMain.removeAllListeners('SENT_ON_EXIT') })
+      after(() => {
+        ipcMain.removeAllListeners('SENT_ON_EXIT');
+      });
       w().webContents.once('did-finish-load', () => {
-        w().webContents.loadURL('about:blank')
-      })
-      w().loadFile(path.join(fixtures, 'send-on-exit.html'))
-      await emittedOnce(ipcMain, 'SENT_ON_EXIT')
-    })
-  })
+        w().webContents.loadURL('about:blank');
+      });
+      w().loadFile(path.join(fixtures, 'send-on-exit.html'));
+      await emittedOnce(ipcMain, 'SENT_ON_EXIT');
+    });
+  });
 
   describe('remote function in renderer', () => {
     afterEach(() => {
-      ipcMain.removeAllListeners('done')
-    })
-    afterEach(closeAllWindows)
+      ipcMain.removeAllListeners('done');
+    });
+    afterEach(closeAllWindows);
 
     it('works when created in preload script', async () => {
-      const preload = path.join(fixtures, 'preload-remote-function.js')
+      const preload = path.join(fixtures, 'preload-remote-function.js');
       const w = new BrowserWindow({
         show: false,
         webPreferences: {
           preload,
-          sandbox: false
-        }
-      })
-      enable(w.webContents)
-      w.loadURL('about:blank')
-      await emittedOnce(ipcMain, 'done')
-    })
-  })
+          sandbox: false,
+        },
+      });
+      enable(w.webContents);
+      w.loadURL('about:blank');
+      await emittedOnce(ipcMain, 'done');
+    });
+  });
 
   describe('remote objects registry', () => {
     it('does not dereference until the render view is deleted (regression)', (done) => {
@@ -345,307 +390,339 @@ describe('remote module', () => {
         show: false,
         webPreferences: {
           nodeIntegration: true,
-          contextIsolation: false
-        }
-      })
-      enable(w.webContents)
+          contextIsolation: false,
+        },
+      });
+      enable(w.webContents);
 
       ipcMain.once('error-message', (event, message) => {
-        expect(message).to.match(/^Cannot call method 'getURL' on missing remote object/)
-        done()
-      })
+        expect(message).to.match(/^Cannot call method 'getURL' on missing remote object/);
+        done();
+      });
 
-      w.loadFile(path.join(fixtures, 'render-view-deleted.html'))
-    })
-  })
+      w.loadFile(path.join(fixtures, 'render-view-deleted.html'));
+    });
+  });
 
   describe('nativeImage serialization', () => {
-    const w = makeWindow()
-    const remotely = makeRemotely(w)
+    const w = makeWindow();
+    const remotely = makeRemotely(w);
 
     it('can serialize an empty nativeImage from renderer to main', async () => {
-      const getImageEmpty = (img: NativeImage) => img.isEmpty()
+      const getImageEmpty = (img: NativeImage) => img.isEmpty();
 
       w().webContents.once('remote-get-global' as any, (event: any) => {
-        event.returnValue = getImageEmpty
-      })
+        event.returnValue = getImageEmpty;
+      });
 
-      await expect(remotely(() => {
-        const emptyImage = require('electron').nativeImage.createEmpty()
-        return require('./renderer').getGlobal('someFunction')(emptyImage)
-      })).to.eventually.be.true()
-    })
+      await expect(
+        remotely(() => {
+          const emptyImage = require('electron').nativeImage.createEmpty();
+          return require('./renderer').getGlobal('someFunction')(emptyImage);
+        }),
+      ).to.eventually.be.true();
+    });
 
     it('can serialize an empty nativeImage from main to renderer', async () => {
       w().webContents.once('remote-get-global' as any, (event: any) => {
-        const emptyImage = require('electron').nativeImage.createEmpty()
-        event.returnValue = emptyImage
-      })
+        const emptyImage = require('electron').nativeImage.createEmpty();
+        event.returnValue = emptyImage;
+      });
 
-      await expect(remotely(() => {
-        const image = require('./renderer').getGlobal('someFunction')
-        return image.isEmpty()
-      })).to.eventually.be.true()
-    })
+      await expect(
+        remotely(() => {
+          const image = require('./renderer').getGlobal('someFunction');
+          return image.isEmpty();
+        }),
+      ).to.eventually.be.true();
+    });
 
     it('can serialize a non-empty nativeImage from renderer to main', async () => {
-      const getImageSize = (img: NativeImage) => img.getSize()
+      const getImageSize = (img: NativeImage) => img.getSize();
 
       w().webContents.once('remote-get-global' as any, (event: any) => {
-        event.returnValue = getImageSize
-      })
+        event.returnValue = getImageSize;
+      });
 
-      await expect(remotely(() => {
-        const { nativeImage } = require('electron')
-        const remote = require('./renderer')
-        const nonEmptyImage = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==')
-        return remote.getGlobal('someFunction')(nonEmptyImage)
-      })).to.eventually.deep.equal({ width: 2, height: 2 })
-    })
+      await expect(
+        remotely(() => {
+          const { nativeImage } = require('electron');
+          const remote = require('./renderer');
+          const nonEmptyImage = nativeImage.createFromDataURL(
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==',
+          );
+          return remote.getGlobal('someFunction')(nonEmptyImage);
+        }),
+      ).to.eventually.deep.equal({ width: 2, height: 2 });
+    });
 
     it('can serialize a non-empty nativeImage from main to renderer', async () => {
       w().webContents.once('remote-get-global' as any, (event: any) => {
-        const nonEmptyImage = nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==')
-        event.returnValue = nonEmptyImage
-      })
+        const nonEmptyImage = nativeImage.createFromDataURL(
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVQYlWP8//8/AwMDEwMDAwMDAwAkBgMBBMzldwAAAABJRU5ErkJggg==',
+        );
+        event.returnValue = nonEmptyImage;
+      });
 
-      await expect(remotely(() => {
-        const image = require('./renderer').getGlobal('someFunction')
-        return image.getSize()
-      })).to.eventually.deep.equal({ width: 2, height: 2 })
-    })
+      await expect(
+        remotely(() => {
+          const image = require('./renderer').getGlobal('someFunction');
+          return image.getSize();
+        }),
+      ).to.eventually.deep.equal({ width: 2, height: 2 });
+    });
 
     it('can properly create a menu with an nativeImage icon in the renderer', async () => {
-      await expect(remotely(() => {
-        const { nativeImage } = require('electron')
-        const remote = require('./renderer')
-        remote.Menu.buildFromTemplate([
-          {
-            label: 'hello',
-            icon: nativeImage.createEmpty()
-          }
-        ])
-      })).to.be.fulfilled()
-    })
-  })
+      await expect(
+        remotely(() => {
+          const { nativeImage } = require('electron');
+          const remote = require('./renderer');
+          remote.Menu.buildFromTemplate([
+            {
+              label: 'hello',
+              icon: nativeImage.createEmpty(),
+            },
+          ]);
+        }),
+      ).to.be.fulfilled();
+    });
+  });
 
   describe('remote listeners', () => {
-    afterEach(closeAllWindows)
+    afterEach(closeAllWindows);
 
     it('detaches listeners subscribed to destroyed renderers, and shows a warning', async () => {
       const w = new BrowserWindow({
         show: false,
         webPreferences: {
           nodeIntegration: true,
-          contextIsolation: false
-        }
-      })
-      enable(w.webContents)
-      await w.loadFile(path.join(fixtures, 'remote-event-handler.html'))
-      w.webContents.reload()
-      await emittedOnce(w.webContents, 'did-finish-load')
+          contextIsolation: false,
+        },
+      });
+      enable(w.webContents);
+      await w.loadFile(path.join(fixtures, 'remote-event-handler.html'));
+      w.webContents.reload();
+      await emittedOnce(w.webContents, 'did-finish-load');
 
       const expectedMessage = [
         'Attempting to call a function in a renderer window that has been closed or released.',
         'Function provided here: remote-event-handler.html:11:33',
-        'Remote event names: remote-handler, other-remote-handler'
-      ].join('\n')
+        'Remote event names: remote-handler, other-remote-handler',
+      ].join('\n');
 
-      expect(w.webContents.listenerCount('remote-handler')).to.equal(2)
-      let warnMessage: string | null = null
-      const originalWarn = console.warn
-      let warned: Function
-      const warnPromise = new Promise(resolve => {
-        warned = resolve
-      })
+      expect(w.webContents.listenerCount('remote-handler')).to.equal(2);
+      let warnMessage: string | null = null;
+      const originalWarn = console.warn;
+      let warned: Function;
+      const warnPromise = new Promise((resolve) => {
+        warned = resolve;
+      });
       try {
         console.warn = (message: string) => {
-          warnMessage = message
-          warned()
-        }
-        w.webContents.emit('remote-handler', { sender: w.webContents })
-        await warnPromise
+          warnMessage = message;
+          warned();
+        };
+        w.webContents.emit('remote-handler', { sender: w.webContents });
+        await warnPromise;
       } finally {
-        console.warn = originalWarn
+        console.warn = originalWarn;
       }
-      expect(w.webContents.listenerCount('remote-handler')).to.equal(1)
-      expect(warnMessage).to.equal(expectedMessage)
-    })
-  })
+      expect(w.webContents.listenerCount('remote-handler')).to.equal(1);
+      expect(warnMessage).to.equal(expectedMessage);
+    });
+  });
 
   describe('remote.require', () => {
-    const w = makeWindow()
-    const remotely = makeRemotely(w)
+    const w = makeWindow();
+    const remotely = makeRemotely(w);
 
     remotely.it()('should returns same object for the same module', () => {
-      const remote = require('./renderer')
-      const a = remote.require('electron')
-      const b = remote.require('electron')
-      expect(a).to.equal(b)
-    })
+      const remote = require('./renderer');
+      const a = remote.require('electron');
+      const b = remote.require('electron');
+      expect(a).to.equal(b);
+    });
 
-    remotely.it(path.join(fixtures, 'id.js'))('should work when object contains id property', (module: string) => {
-      const { id } = require('./renderer').require(module)
-      expect(id).to.equal(1127)
-    })
+    remotely.it(path.join(fixtures, 'id.js'))(
+      'should work when object contains id property',
+      (module: string) => {
+        const { id } = require('./renderer').require(module);
+        expect(id).to.equal(1127);
+      },
+    );
 
-    remotely.it(path.join(fixtures, 'no-prototype.js'))('should work when object has no prototype', (module: string) => {
-      const a = require('./renderer').require(module)
-      expect(a.foo.bar).to.equal('baz')
-      expect(a.foo.baz).to.equal(false)
-      expect(a.bar).to.equal(1234)
-      expect(a.getConstructorName(Object.create(null))).to.equal('')
-      expect(a.getConstructorName(new (class {})())).to.equal('')
-    })
+    remotely.it(path.join(fixtures, 'no-prototype.js'))(
+      'should work when object has no prototype',
+      (module: string) => {
+        const a = require('./renderer').require(module);
+        expect(a.foo.bar).to.equal('baz');
+        expect(a.foo.baz).to.equal(false);
+        expect(a.bar).to.equal(1234);
+        expect(a.getConstructorName(Object.create(null))).to.equal('');
+        expect(a.getConstructorName(new (class {})())).to.equal('');
+      },
+    );
 
-    /* TODO: Electron 28 removed process.mainModule, so we need to find an alternative way to test that the remotely 
+    /* TODO: Electron 28 removed process.mainModule, so we need to find an alternative way to test that the remotely
        required module in the renderer uses the same main module as the main process. In src/main/server.ts:388 we do so 
        by looping over the module parents until getting the top most one and using their require, but that require 
        doesn't send along the module paths, so we can't use it here. */
-       
+
     it.skip('should search module from the user app', async () => {
       expectPathsEqual(
         path.normalize(await remotely(() => require('./renderer').process.mainModule!.filename)),
-        path.resolve(__dirname, 'index.js')
-      )
-        /*
+        path.resolve(__dirname, 'index.js'),
+      );
+      /*
       expectPathsEqual(
         path.normalize(await remotely(() => require('./renderer').process.mainModule!.paths[0])),
         path.resolve(__dirname, 'node_modules')
       )
          */
-    })
+    });
 
     remotely.it(fixtures)('should work with function properties', (fixtures: string) => {
-      const path = require('path')
+      const path = require('path');
 
       {
-        const a = require('./renderer').require(path.join(fixtures, 'export-function-with-properties.js'))
-        expect(typeof a).to.equal('function')
-        expect(a.bar).to.equal('baz')
+        const a = require('./renderer').require(
+          path.join(fixtures, 'export-function-with-properties.js'),
+        );
+        expect(typeof a).to.equal('function');
+        expect(a.bar).to.equal('baz');
       }
 
       {
-        const a = require('./renderer').require(path.join(fixtures, 'function-with-properties.js'))
-        expect(typeof a).to.equal('object')
-        expect(a.foo()).to.equal('hello')
-        expect(a.foo.bar).to.equal('baz')
-        expect(a.foo.nested.prop).to.equal('yes')
-        expect(a.foo.method1()).to.equal('world')
-        expect(a.foo.method1.prop1()).to.equal(123)
+        const a = require('./renderer').require(path.join(fixtures, 'function-with-properties.js'));
+        expect(typeof a).to.equal('object');
+        expect(a.foo()).to.equal('hello');
+        expect(a.foo.bar).to.equal('baz');
+        expect(a.foo.nested.prop).to.equal('yes');
+        expect(a.foo.method1()).to.equal('world');
+        expect(a.foo.method1.prop1()).to.equal(123);
       }
 
       {
-        const a = require('./renderer').require(path.join(fixtures, 'function-with-missing-properties.js')).setup()
-        expect(a.bar()).to.equal(true)
-        expect(a.bar.baz).to.be.undefined()
+        const a = require('./renderer')
+          .require(path.join(fixtures, 'function-with-missing-properties.js'))
+          .setup();
+        expect(a.bar()).to.equal(true);
+        expect(a.bar.baz).to.be.undefined();
       }
-    })
+    });
 
     remotely.it(fixtures)('should work with static class members', (fixtures: string) => {
-      const path = require('path')
-      const a = require('./renderer').require(path.join(fixtures, 'remote-static.js'))
-      expect(typeof a.Foo).to.equal('function')
-      expect(a.Foo.foo()).to.equal(3)
-      expect(a.Foo.bar).to.equal('baz')
-      expect(new a.Foo().baz()).to.equal(123)
-    })
+      const path = require('path');
+      const a = require('./renderer').require(path.join(fixtures, 'remote-static.js'));
+      expect(typeof a.Foo).to.equal('function');
+      expect(a.Foo.foo()).to.equal(3);
+      expect(a.Foo.bar).to.equal('baz');
+      expect(new a.Foo().baz()).to.equal(123);
+    });
 
-    remotely.it(fixtures)('includes the length of functions specified as arguments', (fixtures: string) => {
-      const path = require('path')
-      const a = require('./renderer').require(path.join(fixtures, 'function-with-args.js'))
-      /* eslint-disable @typescript-eslint/no-unused-vars */
-      expect(a((a: any, b: any, c: any) => {})).to.equal(3)
-      expect(a((a: any) => {})).to.equal(1)
-      expect(a((...args: any[]) => {})).to.equal(0)
-      /* eslint-enable @typescript-eslint/no-unused-vars */
-    })
+    remotely.it(fixtures)(
+      'includes the length of functions specified as arguments',
+      (fixtures: string) => {
+        const path = require('path');
+        const a = require('./renderer').require(path.join(fixtures, 'function-with-args.js'));
+        /* eslint-disable @typescript-eslint/no-unused-vars */
+        expect(a((a: any, b: any, c: any) => {})).to.equal(3);
+        expect(a((a: any) => {})).to.equal(1);
+        expect(a((...args: any[]) => {})).to.equal(0);
+        /* eslint-enable @typescript-eslint/no-unused-vars */
+      },
+    );
 
-    remotely.it(fixtures)('handles circular references in arrays and objects', (fixtures: string) => {
-      const path = require('path')
-      const a = require('./renderer').require(path.join(fixtures, 'circular.js'))
+    remotely.it(fixtures)(
+      'handles circular references in arrays and objects',
+      (fixtures: string) => {
+        const path = require('path');
+        const a = require('./renderer').require(path.join(fixtures, 'circular.js'));
 
-      let arrayA: any[] = ['foo']
-      const arrayB = [arrayA, 'bar']
-      arrayA.push(arrayB)
-      expect(a.returnArgs(arrayA, arrayB)).to.deep.equal([
-        ['foo', [null, 'bar']],
-        [['foo', null], 'bar']
-      ])
+        let arrayA: any[] = ['foo'];
+        const arrayB = [arrayA, 'bar'];
+        arrayA.push(arrayB);
+        expect(a.returnArgs(arrayA, arrayB)).to.deep.equal([
+          ['foo', [null, 'bar']],
+          [['foo', null], 'bar'],
+        ]);
 
-      let objectA: any = { foo: 'bar' }
-      const objectB = { baz: objectA }
-      objectA.objectB = objectB
-      expect(a.returnArgs(objectA, objectB)).to.deep.equal([
-        { foo: 'bar', objectB: { baz: null } },
-        { baz: { foo: 'bar', objectB: null } }
-      ])
+        let objectA: any = { foo: 'bar' };
+        const objectB = { baz: objectA };
+        objectA.objectB = objectB;
+        expect(a.returnArgs(objectA, objectB)).to.deep.equal([
+          { foo: 'bar', objectB: { baz: null } },
+          { baz: { foo: 'bar', objectB: null } },
+        ]);
 
-      arrayA = [1, 2, 3]
-      expect(a.returnArgs({ foo: arrayA }, { bar: arrayA })).to.deep.equal([
-        { foo: [1, 2, 3] },
-        { bar: [1, 2, 3] }
-      ])
+        arrayA = [1, 2, 3];
+        expect(a.returnArgs({ foo: arrayA }, { bar: arrayA })).to.deep.equal([
+          { foo: [1, 2, 3] },
+          { bar: [1, 2, 3] },
+        ]);
 
-      objectA = { foo: 'bar' }
-      expect(a.returnArgs({ foo: objectA }, { bar: objectA })).to.deep.equal([
-        { foo: { foo: 'bar' } },
-        { bar: { foo: 'bar' } }
-      ])
+        objectA = { foo: 'bar' };
+        expect(a.returnArgs({ foo: objectA }, { bar: objectA })).to.deep.equal([
+          { foo: { foo: 'bar' } },
+          { bar: { foo: 'bar' } },
+        ]);
 
-      arrayA = []
-      arrayA.push(arrayA)
-      expect(a.returnArgs(arrayA)).to.deep.equal([
-        [null]
-      ])
+        arrayA = [];
+        arrayA.push(arrayA);
+        expect(a.returnArgs(arrayA)).to.deep.equal([[null]]);
 
-      objectA = {}
-      objectA.foo = objectA
-      objectA.bar = 'baz'
-      expect(a.returnArgs(objectA)).to.deep.equal([
-        { foo: null, bar: 'baz' }
-      ])
+        objectA = {};
+        objectA.foo = objectA;
+        objectA.bar = 'baz';
+        expect(a.returnArgs(objectA)).to.deep.equal([{ foo: null, bar: 'baz' }]);
 
-      objectA = {}
-      objectA.foo = { bar: objectA }
-      objectA.bar = 'baz'
-      expect(a.returnArgs(objectA)).to.deep.equal([
-        { foo: { bar: null }, bar: 'baz' }
-      ])
-    })
-  })
+        objectA = {};
+        objectA.foo = { bar: objectA };
+        objectA.bar = 'baz';
+        expect(a.returnArgs(objectA)).to.deep.equal([{ foo: { bar: null }, bar: 'baz' }]);
+      },
+    );
+  });
 
   describe('remote.createFunctionWithReturnValue', () => {
-    const remotely = makeRemotely(makeWindow())
+    const remotely = makeRemotely(makeWindow());
 
     remotely.it(fixtures)('should be called in browser synchronously', async (fixtures: string) => {
-      const remote = require('./renderer')
-      const path = require('path')
-      const buf = Buffer.from('test')
-      const call = remote.require(path.join(fixtures, 'call.js'))
-      const result = call.call((remote as any).createFunctionWithReturnValue(buf))
-      expect(result).to.be.an.instanceOf(Uint8Array)
-    })
-  })
+      const remote = require('./renderer');
+      const path = require('path');
+      const buf = Buffer.from('test');
+      const call = remote.require(path.join(fixtures, 'call.js'));
+      const result = call.call((remote as any).createFunctionWithReturnValue(buf));
+      expect(result).to.be.an.instanceOf(Uint8Array);
+    });
+  });
 
   describe('remote modules', () => {
-    const remotely = makeRemotely(makeWindow())
+    const remotely = makeRemotely(makeWindow());
 
-    const mainModules = Object.keys(require('electron'))
-    remotely.it(mainModules)('includes browser process modules as properties', (mainModules: string[]) => {
-      const remote = require('./renderer')
-      const remoteModules = mainModules.filter(name => (remote as any)[name])
-      expect(remoteModules).to.be.deep.equal(mainModules)
-    })
+    const mainModules = Object.keys(require('electron'));
+    remotely.it(mainModules)(
+      'includes browser process modules as properties',
+      (mainModules: string[]) => {
+        const remote = require('./renderer');
+        const remoteModules = mainModules.filter((name) => (remote as any)[name]);
+        expect(remoteModules).to.be.deep.equal(mainModules);
+      },
+    );
 
-    remotely.it(fixtures)('returns toString() of original function via toString()', (fixtures: string) => {
-      const path = require('path')
-      const { readText } = require('./renderer').clipboard
-      expect(readText.toString().startsWith('function')).to.be.true()
+    remotely.it(fixtures)(
+      'returns toString() of original function via toString()',
+      (fixtures: string) => {
+        const path = require('path');
+        const { readText } = require('./renderer').clipboard;
+        expect(readText.toString().startsWith('function')).to.be.true();
 
-      const { functionWithToStringProperty } = require('./renderer').require(path.join(fixtures, 'to-string-non-function.js'))
-      expect(functionWithToStringProperty.toString).to.equal('hello')
-    })
+        const { functionWithToStringProperty } = require('./renderer').require(
+          path.join(fixtures, 'to-string-non-function.js'),
+        );
+        expect(functionWithToStringProperty.toString).to.equal('hello');
+      },
+    );
 
     const protocolKeys = Object.getOwnPropertyNames(protocol);
     remotely.it(protocolKeys)('remote.protocol returns all keys', (protocolKeys: [string]) => {
@@ -653,166 +730,178 @@ describe('remote module', () => {
       const remoteKeys = Object.getOwnPropertyNames(protocol);
       expect(remoteKeys).to.deep.equal(protocolKeys);
       for (const key of remoteKeys) {
-       expect(typeof (protocol as any)[key]).to.equal('function');
+        expect(typeof (protocol as any)[key]).to.equal('function');
       }
     });
-  })
+  });
 
   describe('remote object in renderer', () => {
-    const win = makeWindow()
-    const remotely = makeRemotely(win)
+    const win = makeWindow();
+    const remotely = makeRemotely(win);
 
     remotely.it(fixtures)('can change its properties', (fixtures: string) => {
-      const module = require('path').join(fixtures, 'property.js')
-      const property = require('./renderer').require(module)
-      expect(property.property).to.equal(1127)
-      property.property = null
-      expect(property.property).to.equal(null)
-      property.property = undefined
-      expect(property.property).to.equal(undefined)
-      property.property = 1007
-      expect(property.property).to.equal(1007)
+      const module = require('path').join(fixtures, 'property.js');
+      const property = require('./renderer').require(module);
+      expect(property.property).to.equal(1127);
+      property.property = null;
+      expect(property.property).to.equal(null);
+      property.property = undefined;
+      expect(property.property).to.equal(undefined);
+      property.property = 1007;
+      expect(property.property).to.equal(1007);
 
-      expect(property.getFunctionProperty()).to.equal('foo-browser')
-      property.func.property = 'bar'
-      expect(property.getFunctionProperty()).to.equal('bar-browser')
-      property.func.property = 'foo' // revert back
+      expect(property.getFunctionProperty()).to.equal('foo-browser');
+      property.func.property = 'bar';
+      expect(property.getFunctionProperty()).to.equal('bar-browser');
+      property.func.property = 'foo'; // revert back
 
-      const property2 = require('./renderer').require(module)
-      expect(property2.property).to.equal(1007)
+      const property2 = require('./renderer').require(module);
+      expect(property2.property).to.equal(1007);
 
-      property.property = 1127 // revert back
-    })
+      property.property = 1127; // revert back
+    });
 
     remotely.it(fixtures)('rethrows errors getting/setting properties', (fixtures: string) => {
-      const foo = require('./renderer').require(require('path').join(fixtures, 'error-properties.js'))
+      const foo = require('./renderer').require(
+        require('path').join(fixtures, 'error-properties.js'),
+      );
 
       expect(() => {
         // eslint-disable-next-line
-        foo.bar
-      }).to.throw('getting error')
+        foo.bar;
+      }).to.throw('getting error');
 
       expect(() => {
-        foo.bar = 'test'
-      }).to.throw('setting error')
-    })
+        foo.bar = 'test';
+      }).to.throw('setting error');
+    });
 
     remotely.it(fixtures)('can set a remote property with a remote object', (fixtures: string) => {
-      const remote = require('./renderer')
-      const foo = remote.require(require('path').join(fixtures, 'remote-object-set.js'))
-      foo.bar = remote.getCurrentWindow()
-    })
+      const remote = require('./renderer');
+      const foo = remote.require(require('path').join(fixtures, 'remote-object-set.js'));
+      foo.bar = remote.getCurrentWindow();
+    });
 
     remotely.it(fixtures)('can construct an object from its member', (fixtures: string) => {
-      const call = require('./renderer').require(require('path').join(fixtures, 'call.js'))
-      const obj = new call.constructor()
-      expect(obj.test).to.equal('test')
-    })
+      const call = require('./renderer').require(require('path').join(fixtures, 'call.js'));
+      const obj = new call.constructor();
+      expect(obj.test).to.equal('test');
+    });
 
     remotely.it(fixtures)('can reassign and delete its member functions', (fixtures: string) => {
-      const remoteFunctions = require('./renderer').require(require('path').join(fixtures, 'function.js'))
-      expect(remoteFunctions.aFunction()).to.equal(1127)
+      const remoteFunctions = require('./renderer').require(
+        require('path').join(fixtures, 'function.js'),
+      );
+      expect(remoteFunctions.aFunction()).to.equal(1127);
 
-      remoteFunctions.aFunction = () => { return 1234 }
-      expect(remoteFunctions.aFunction()).to.equal(1234)
+      remoteFunctions.aFunction = () => {
+        return 1234;
+      };
+      expect(remoteFunctions.aFunction()).to.equal(1234);
 
-      expect(delete remoteFunctions.aFunction).to.equal(true)
-    })
+      expect(delete remoteFunctions.aFunction).to.equal(true);
+    });
 
     remotely.it('is referenced by its members', () => {
-      const stringify = require('./renderer').getGlobal('JSON').stringify
-      global.gc()
-      stringify({})
-    })
+      const stringify = require('./renderer').getGlobal('JSON').stringify;
+      global.gc();
+      stringify({});
+    });
 
     it('can handle objects without constructors', async () => {
       win().webContents.once('remote-get-global' as any, (event: any) => {
-        class Foo { bar () { return 'bar'; } }
-        Foo.prototype.constructor = undefined as any
-        event.returnValue = new Foo()
-      })
-      expect(await remotely(() => require('./renderer').getGlobal('test').bar())).to.equal('bar')
-    })
-  })
+        class Foo {
+          bar() {
+            return 'bar';
+          }
+        }
+        Foo.prototype.constructor = undefined as any;
+        event.returnValue = new Foo();
+      });
+      expect(await remotely(() => require('./renderer').getGlobal('test').bar())).to.equal('bar');
+    });
+  });
 
   describe('remote value in browser', () => {
-    const remotely = makeRemotely(makeWindow())
-    const print = path.join(fixtures, 'print_name.js')
+    const remotely = makeRemotely(makeWindow());
+    const print = path.join(fixtures, 'print_name.js');
 
     remotely.it(print)('preserves NaN', (print: string) => {
-      const printName = require('./renderer').require(print)
-      expect(printName.getNaN()).to.be.NaN()
-      expect(printName.echo(NaN)).to.be.NaN()
-    })
+      const printName = require('./renderer').require(print);
+      expect(printName.getNaN()).to.be.NaN();
+      expect(printName.echo(NaN)).to.be.NaN();
+    });
 
     remotely.it(print)('preserves Infinity', (print: string) => {
-      const printName = require('./renderer').require(print)
-      expect(printName.getInfinity()).to.equal(Infinity)
-      expect(printName.echo(Infinity)).to.equal(Infinity)
-    })
+      const printName = require('./renderer').require(print);
+      expect(printName.getInfinity()).to.equal(Infinity);
+      expect(printName.echo(Infinity)).to.equal(Infinity);
+    });
 
     remotely.it(print)('keeps its constructor name for objects', (print: string) => {
-      const printName = require('./renderer').require(print)
-      const buf = Buffer.from('test')
-      expect(printName.print(buf)).to.equal('Buffer')
-    })
+      const printName = require('./renderer').require(print);
+      const buf = Buffer.from('test');
+      expect(printName.print(buf)).to.equal('Buffer');
+    });
 
     remotely.it(print)('supports instanceof Boolean', (print: string) => {
-      const printName = require('./renderer').require(print)
-      const obj = Boolean(true)
-      expect(printName.print(obj)).to.equal('Boolean')
-      expect(printName.echo(obj)).to.deep.equal(obj)
-    })
+      const printName = require('./renderer').require(print);
+      const obj = Boolean(true);
+      expect(printName.print(obj)).to.equal('Boolean');
+      expect(printName.echo(obj)).to.deep.equal(obj);
+    });
 
     remotely.it(print)('supports instanceof Number', (print: string) => {
-      const printName = require('./renderer').require(print)
-      const obj = Number(42)
-      expect(printName.print(obj)).to.equal('Number')
-      expect(printName.echo(obj)).to.deep.equal(obj)
-    })
+      const printName = require('./renderer').require(print);
+      const obj = Number(42);
+      expect(printName.print(obj)).to.equal('Number');
+      expect(printName.echo(obj)).to.deep.equal(obj);
+    });
 
     remotely.it(print)('supports instanceof String', (print: string) => {
-      const printName = require('./renderer').require(print)
-      const obj = String('Hello World!')
-      expect(printName.print(obj)).to.equal('String')
-      expect(printName.echo(obj)).to.deep.equal(obj)
-    })
+      const printName = require('./renderer').require(print);
+      const obj = String('Hello World!');
+      expect(printName.print(obj)).to.equal('String');
+      expect(printName.echo(obj)).to.deep.equal(obj);
+    });
 
     remotely.it(print)('supports instanceof Date', (print: string) => {
-      const printName = require('./renderer').require(print)
-      const now = new Date()
-      expect(printName.print(now)).to.equal('Date')
-      expect(printName.echo(now)).to.deep.equal(now)
-    })
+      const printName = require('./renderer').require(print);
+      const now = new Date();
+      expect(printName.print(now)).to.equal('Date');
+      expect(printName.echo(now)).to.deep.equal(now);
+    });
 
     remotely.it(print)('supports instanceof RegExp', (print: string) => {
-      const printName = require('./renderer').require(print)
-      const regexp = RegExp('.*')
-      expect(printName.print(regexp)).to.equal('RegExp')
-      expect(printName.echo(regexp)).to.deep.equal(regexp)
-    })
+      const printName = require('./renderer').require(print);
+      const regexp = RegExp('.*');
+      expect(printName.print(regexp)).to.equal('RegExp');
+      expect(printName.echo(regexp)).to.deep.equal(regexp);
+    });
 
     remotely.it(print)('supports instanceof Buffer', (print: string) => {
-      const printName = require('./renderer').require(print)
-      const buffer = Buffer.from('test')
-      expect(buffer.equals(printName.echo(buffer))).to.be.true()
+      const printName = require('./renderer').require(print);
+      const buffer = Buffer.from('test');
+      expect(buffer.equals(printName.echo(buffer))).to.be.true();
 
-      const objectWithBuffer = { a: 'foo', b: Buffer.from('bar') }
-      expect(objectWithBuffer.b.equals(printName.echo(objectWithBuffer).b)).to.be.true()
+      const objectWithBuffer = { a: 'foo', b: Buffer.from('bar') };
+      expect(objectWithBuffer.b.equals(printName.echo(objectWithBuffer).b)).to.be.true();
 
-      const arrayWithBuffer = [1, 2, Buffer.from('baz')]
-      expect((arrayWithBuffer[2] as Buffer).equals(printName.echo(arrayWithBuffer)[2])).to.be.true()
-    })
+      const arrayWithBuffer = [1, 2, Buffer.from('baz')];
+      expect(
+        (arrayWithBuffer[2] as Buffer).equals(printName.echo(arrayWithBuffer)[2]),
+      ).to.be.true();
+    });
 
     remotely.it(print)('supports instanceof ArrayBuffer', (print: string) => {
-      const printName = require('./renderer').require(print)
-      const buffer = new ArrayBuffer(8)
-      const view = new DataView(buffer)
+      const printName = require('./renderer').require(print);
+      const buffer = new ArrayBuffer(8);
+      const view = new DataView(buffer);
 
-      view.setFloat64(0, Math.PI)
-      expect(printName.echo(buffer)).to.deep.equal(buffer)
-      expect(printName.print(buffer)).to.equal('ArrayBuffer')
-    })
+      view.setFloat64(0, Math.PI);
+      expect(printName.echo(buffer)).to.deep.equal(buffer);
+      expect(printName.print(buffer)).to.equal('ArrayBuffer');
+    });
 
     const arrayTests: [string, number[]][] = [
       ['Int8Array', [1, 2, 3, 4]],
@@ -823,230 +912,259 @@ describe('remote module', () => {
       ['Int32Array', [0x12345678, 0x23456789]],
       ['Uint32Array', [0x12345678, 0x23456789]],
       ['Float32Array', [0.5, 1.0, 1.5]],
-      ['Float64Array', [0.5, 1.0, 1.5]]
-    ]
+      ['Float64Array', [0.5, 1.0, 1.5]],
+    ];
 
     arrayTests.forEach(([arrayType, values]) => {
-      remotely.it(print, arrayType, values)(`supports instanceof ${arrayType}`, (print: string, arrayType: string, values: number[]) => {
-        const printName = require('./renderer').require(print)
-        expect([...printName.typedArray(arrayType, values)]).to.deep.equal(values)
+      remotely.it(
+        print,
+        arrayType,
+        values,
+      )(
+        `supports instanceof ${arrayType}`,
+        (print: string, arrayType: string, values: number[]) => {
+          const printName = require('./renderer').require(print);
+          expect([...printName.typedArray(arrayType, values)]).to.deep.equal(values);
 
-        const int8values = new ((window as any)[arrayType])(values)
-        expect(printName.typedArray(arrayType, int8values)).to.deep.equal(int8values)
-        expect(printName.print(int8values)).to.equal(arrayType)
-      })
-    })
+          const int8values = new (window as any)[arrayType](values);
+          expect(printName.typedArray(arrayType, int8values)).to.deep.equal(int8values);
+          expect(printName.print(int8values)).to.equal(arrayType);
+        },
+      );
+    });
 
     describe('constructing a Uint8Array', () => {
       remotely.it()('does not crash', () => {
-        const RUint8Array = require('./renderer').getGlobal('Uint8Array')
-        new RUint8Array() // eslint-disable-line
-      })
-    })
-  })
+        const RUint8Array = require('./renderer').getGlobal('Uint8Array');
+        new RUint8Array(); // eslint-disable-line
+      });
+    });
+  });
 
   describe('remote promise', () => {
-    const remotely = makeRemotely(makeWindow())
+    const remotely = makeRemotely(makeWindow());
 
     remotely.it(fixtures)('can be used as promise in each side', async (fixtures: string) => {
-      const promise = require('./renderer').require(require('path').join(fixtures, 'promise.js'))
-      const value = await promise.twicePromise(Promise.resolve(1234))
-      expect(value).to.equal(2468)
-    })
+      const promise = require('./renderer').require(require('path').join(fixtures, 'promise.js'));
+      const value = await promise.twicePromise(Promise.resolve(1234));
+      expect(value).to.equal(2468);
+    });
 
     remotely.it(fixtures)('handles rejections via catch(onRejected)', async (fixtures: string) => {
-      const promise = require('./renderer').require(require('path').join(fixtures, 'rejected-promise.js'))
-      const error = await new Promise<Error>(resolve => {
-        promise.reject(Promise.resolve(1234)).catch(resolve)
-      })
-      expect(error.message).to.equal('rejected')
-    })
+      const promise = require('./renderer').require(
+        require('path').join(fixtures, 'rejected-promise.js'),
+      );
+      const error = await new Promise<Error>((resolve) => {
+        promise.reject(Promise.resolve(1234)).catch(resolve);
+      });
+      expect(error.message).to.equal('rejected');
+    });
 
-    remotely.it(fixtures)('handles rejections via then(onFulfilled, onRejected)', async (fixtures: string) => {
-      const promise = require('./renderer').require(require('path').join(fixtures, 'rejected-promise.js'))
-      const error = await new Promise<Error>(resolve => {
-        promise.reject(Promise.resolve(1234)).then(() => {}, resolve)
-      })
-      expect(error.message).to.equal('rejected')
-    })
+    remotely.it(fixtures)(
+      'handles rejections via then(onFulfilled, onRejected)',
+      async (fixtures: string) => {
+        const promise = require('./renderer').require(
+          require('path').join(fixtures, 'rejected-promise.js'),
+        );
+        const error = await new Promise<Error>((resolve) => {
+          promise.reject(Promise.resolve(1234)).then(() => {}, resolve);
+        });
+        expect(error.message).to.equal('rejected');
+      },
+    );
 
     it('does not emit unhandled rejection events in the main process', (done) => {
-      function onUnhandledRejection () {
-        done(new Error('Unexpected unhandledRejection event'))
+      function onUnhandledRejection() {
+        done(new Error('Unexpected unhandledRejection event'));
       }
-      process.once('unhandledRejection', onUnhandledRejection)
+      process.once('unhandledRejection', onUnhandledRejection);
 
       remotely(async (fixtures: string) => {
-        const promise = require('./renderer').require(require('path').join(fixtures, 'unhandled-rejection.js'))
+        const promise = require('./renderer').require(
+          require('path').join(fixtures, 'unhandled-rejection.js'),
+        );
         return new Promise((resolve, reject) => {
-          promise.reject().then(() => {
-            reject(new Error('Promise was not rejected'))
-          }).catch((error: Error) => {
-            resolve(error)
-          })
-        })
-      }, fixtures).then(error => {
+          promise
+            .reject()
+            .then(() => {
+              reject(new Error('Promise was not rejected'));
+            })
+            .catch((error: Error) => {
+              resolve(error);
+            });
+        });
+      }, fixtures).then((error) => {
         try {
-          expect(error.message).to.equal('rejected')
-          done()
+          expect(error.message).to.equal('rejected');
+          done();
         } catch (e) {
-          done(e)
+          done(e);
         } finally {
-          process.off('unhandledRejection' as any, onUnhandledRejection)
+          process.off('unhandledRejection' as any, onUnhandledRejection);
         }
-      })
-    })
+      });
+    });
 
     it('emits unhandled rejection events in the renderer process', (done) => {
-      remotely((module: string) => new Promise((resolve, reject) => {
-        const promise = require('./renderer').require(module)
+      remotely(
+        (module: string) =>
+          new Promise((resolve, reject) => {
+            const promise = require('./renderer').require(module);
 
-        window.addEventListener('unhandledrejection', function handler (event) {
-          event.preventDefault()
-          window.removeEventListener('unhandledrejection', handler)
-          resolve(event.reason.message)
-        })
+            window.addEventListener('unhandledrejection', function handler(event) {
+              event.preventDefault();
+              window.removeEventListener('unhandledrejection', handler);
+              resolve(event.reason.message);
+            });
 
-        promise.reject().then(() => {
-          reject(new Error('Promise was not rejected'))
-        })
-      }), path.join(fixtures, 'unhandled-rejection.js')).then(
-        (message) => {
-          try {
-            expect(message).to.equal('rejected')
-            done()
-          } catch (e) {
-            done(e)
-          }
-        },
-        done
-      )
-    })
+            promise.reject().then(() => {
+              reject(new Error('Promise was not rejected'));
+            });
+          }),
+        path.join(fixtures, 'unhandled-rejection.js'),
+      ).then((message) => {
+        try {
+          expect(message).to.equal('rejected');
+          done();
+        } catch (e) {
+          done(e);
+        }
+      }, done);
+    });
 
     before(() => {
-      (global as any).returnAPromise = (value: any) => new Promise((resolve) => setTimeout(() => resolve(value), 100))
-    })
+      (global as any).returnAPromise = (value: any) =>
+        new Promise((resolve) => setTimeout(() => resolve(value), 100));
+    });
     after(() => {
-      delete (global as any).returnAPromise
-    })
-    remotely.it()('using a promise based method resolves correctly when global Promise is overridden', async () => {
-      const remote = require('./renderer')
-      const original = global.Promise
-      try {
-        expect(await remote.getGlobal('returnAPromise')(123)).to.equal(123)
-        global.Promise = { resolve: () => ({}) } as any
-        expect(await remote.getGlobal('returnAPromise')(456)).to.equal(456)
-      } finally {
-        global.Promise = original
-      }
-    })
-  })
+      delete (global as any).returnAPromise;
+    });
+    remotely.it()(
+      'using a promise based method resolves correctly when global Promise is overridden',
+      async () => {
+        const remote = require('./renderer');
+        const original = global.Promise;
+        try {
+          expect(await remote.getGlobal('returnAPromise')(123)).to.equal(123);
+          global.Promise = { resolve: () => ({}) } as any;
+          expect(await remote.getGlobal('returnAPromise')(456)).to.equal(456);
+        } finally {
+          global.Promise = original;
+        }
+      },
+    );
+  });
 
   describe('remote webContents', () => {
-    const remotely = makeRemotely(makeWindow())
+    const remotely = makeRemotely(makeWindow());
 
     it('can return same object with different getters', async () => {
       const equal = await remotely(() => {
-        const remote = require('./renderer')
-        const contents1 = remote.getCurrentWindow().webContents
-        const contents2 = remote.getCurrentWebContents()
-        return contents1 === contents2
-      })
-      expect(equal).to.be.true()
-    })
-  })
+        const remote = require('./renderer');
+        const contents1 = remote.getCurrentWindow().webContents;
+        const contents2 = remote.getCurrentWebContents();
+        return contents1 === contents2;
+      });
+      expect(equal).to.be.true();
+    });
+  });
 
   describe('remote class', () => {
-    const remotely = makeRemotely(makeWindow())
+    const remotely = makeRemotely(makeWindow());
 
     remotely.it(fixtures)('can get methods', (fixtures: string) => {
-      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
-      expect(base.method()).to.equal('method')
-    })
+      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'));
+      expect(base.method()).to.equal('method');
+    });
 
     remotely.it(fixtures)('can get properties', (fixtures: string) => {
-      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
-      expect(base.readonly).to.equal('readonly')
-    })
+      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'));
+      expect(base.readonly).to.equal('readonly');
+    });
 
     remotely.it(fixtures)('can change properties', (fixtures: string) => {
-      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
-      expect(base.value).to.equal('old')
-      base.value = 'new'
-      expect(base.value).to.equal('new')
-      base.value = 'old'
-    })
+      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'));
+      expect(base.value).to.equal('old');
+      base.value = 'new';
+      expect(base.value).to.equal('new');
+      base.value = 'old';
+    });
 
     remotely.it(fixtures)('has unenumerable methods', (fixtures: string) => {
-      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
-      expect(base).to.not.have.ownProperty('method')
-      expect(Object.getPrototypeOf(base)).to.have.ownProperty('method')
-    })
+      const { base } = require('./renderer').require(require('path').join(fixtures, 'class.js'));
+      expect(base).to.not.have.ownProperty('method');
+      expect(Object.getPrototypeOf(base)).to.have.ownProperty('method');
+    });
 
     remotely.it(fixtures)('keeps prototype chain in derived class', (fixtures: string) => {
-      const { derived } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
-      expect(derived.method()).to.equal('method')
-      expect(derived.readonly).to.equal('readonly')
-      expect(derived).to.not.have.ownProperty('method')
-      const proto = Object.getPrototypeOf(derived)
-      expect(proto).to.not.have.ownProperty('method')
-      expect(Object.getPrototypeOf(proto)).to.have.ownProperty('method')
-    })
+      const { derived } = require('./renderer').require(require('path').join(fixtures, 'class.js'));
+      expect(derived.method()).to.equal('method');
+      expect(derived.readonly).to.equal('readonly');
+      expect(derived).to.not.have.ownProperty('method');
+      const proto = Object.getPrototypeOf(derived);
+      expect(proto).to.not.have.ownProperty('method');
+      expect(Object.getPrototypeOf(proto)).to.have.ownProperty('method');
+    });
 
     remotely.it(fixtures)('is referenced by methods in prototype chain', (fixtures: string) => {
-      let { derived } = require('./renderer').require(require('path').join(fixtures, 'class.js'))
-      const method = derived.method
-      derived = null
-      global.gc()
-      expect(method()).to.equal('method')
-    })
-  })
+      let { derived } = require('./renderer').require(require('path').join(fixtures, 'class.js'));
+      const method = derived.method;
+      derived = null;
+      global.gc();
+      expect(method()).to.equal('method');
+    });
+  });
 
   describe('remote exception', () => {
-    const remotely = makeRemotely(makeWindow())
+    const remotely = makeRemotely(makeWindow());
 
     remotely.it(fixtures)('throws errors from the main process', (fixtures: string) => {
-      const throwFunction = require('./renderer').require(require('path').join(fixtures, 'exception.js'))
+      const throwFunction = require('./renderer').require(
+        require('path').join(fixtures, 'exception.js'),
+      );
       expect(() => {
-        throwFunction()
-      }).to.throw(/undefined/)
-    })
+        throwFunction();
+      }).to.throw(/undefined/);
+    });
 
     remotely.it(fixtures)('tracks error cause', (fixtures: string) => {
-      const throwFunction = require('./renderer').require(require('path').join(fixtures, 'exception.js'))
+      const throwFunction = require('./renderer').require(
+        require('path').join(fixtures, 'exception.js'),
+      );
       try {
-        throwFunction(new Error('error from main'))
-        expect.fail()
+        throwFunction(new Error('error from main'));
+        expect.fail();
       } catch (e: any) {
-        expect(e.message).to.match(/Could not call remote function/)
-        if (parseInt(process.versions.electron) < 14) // FIXME
-          expect(e.cause.message).to.equal('error from main')
+        expect(e.message).to.match(/Could not call remote function/);
+        if (parseInt(process.versions.electron) < 14)
+          // FIXME
+          expect(e.cause.message).to.equal('error from main');
       }
-    })
-  })
+    });
+  });
 
   describe('gc behavior', () => {
-    const win = makeWindow()
-    const remotely = makeRemotely(win)
+    const win = makeWindow();
+    const remotely = makeRemotely(win);
     it('is resilient to gc happening between request and response', async () => {
-      const obj = { x: 'y' }
+      const obj = { x: 'y' };
       win().webContents.on('remote-get-global' as any, (event: any) => {
-        event.returnValue = obj
-      })
+        event.returnValue = obj;
+      });
       await remotely(() => {
-        const { ipcRenderer } = require('electron')
-        const originalSendSync = ipcRenderer.sendSync.bind(ipcRenderer) as any
+        const { ipcRenderer } = require('electron');
+        const originalSendSync = ipcRenderer.sendSync.bind(ipcRenderer) as any;
         ipcRenderer.sendSync = (...args: any[]): any => {
-          const ret = originalSendSync(...args)
-          ;(window as any).gc()
-          return ret
-        }
+          const ret = originalSendSync(...args);
+          (window as any).gc();
+          return ret;
+        };
 
         for (let i = 0; i < 100; i++) {
           // eslint-disable-next-line
-          require('./renderer').getGlobal('test').x
+          require('./renderer').getGlobal('test').x;
         }
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});

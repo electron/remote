@@ -1,1 +1,1 @@
-export { initialize, isInitialized, enable } from "./server";
+export { initialize, isInitialized, enable } from './server';

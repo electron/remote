@@ -5,6 +5,5 @@
     "@continuous-auth/semantic-release-npm",
     "@semantic-release/github"
   ],
-  "branches": [ "main" ]
+  "branches": ["main"]
 }
-

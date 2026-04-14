@@ -1,11 +1,9 @@
-exports.property = 1127
+exports.property = 1127;
 
-function func () {
-
-}
-func.property = 'foo'
-exports.func = func
+function func() {}
+func.property = 'foo';
+exports.func = func;
 
 exports.getFunctionProperty = () => {
-  return `${func.property}-${process.type}`
-}
+  return `${func.property}-${process.type}`;
+};

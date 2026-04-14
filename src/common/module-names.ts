@@ -1,10 +1,6 @@
-import { getElectronBinding } from './get-electron-binding'
+import { getElectronBinding } from './get-electron-binding';
 
-export const commonModuleNames = [
-  'clipboard',
-  'nativeImage',
-  'shell',
-];
+export const commonModuleNames = ['clipboard', 'nativeImage', 'shell'];
 
 export const browserModuleNames = [
   'app',
