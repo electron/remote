@@ -13,7 +13,7 @@ cache-mode: none
 
 jobs:
   test:
-    uses: ./.github/workflows/test.yml
+    uses: $/.github/workflows/test.yml
 
   release:
     name: Release
