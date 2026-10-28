@@ -12,6 +12,7 @@ export const browserModuleNames = [
   'BaseWindow',
   'BrowserView',
   'BrowserWindow',
+  'ClipboardItem',
   'contentTracing',
   'crashReporter',
   'dialog',
