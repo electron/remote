@@ -47,7 +47,7 @@ __metadata:
     mocha-junit-reporter: "npm:^1.23.3"
     mocha-multi-reporters: "npm:^1.1.7"
     ts-node: "npm:^8.10.2"
-    typescript: "npm:^4.1.3"
+    typescript: "npm:^5.9.3"
   peerDependencies:
     electron: ">= 13.0.0"
   dependenciesMeta:
@@ -1049,23 +1049,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^4.1.3":
-  version: 4.1.3
-  resolution: "typescript@npm:4.1.3"
+"typescript@npm:^5.9.3":
+  version: 5.9.3
+  resolution: "typescript@npm:5.9.3"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10c0/0d0480d79f05d4c671c976063cd13d915e0eec317b79784b16540812579bb4e4b6f86a58239a4e87a222642bc3db02a22a0c6631d6fb160d6719868dd782f9de
+  checksum: 10c0/6bd7552ce39f97e711db5aa048f6f9995b53f1c52f7d8667c1abdc1700c68a76a308f579cd309ce6b53646deb4e9a1be7c813a93baaf0a28ccd536a30270e1c5
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^4.1.3#optional!builtin<compat/typescript>":
-  version: 4.1.3
-  resolution: "typescript@patch:typescript@npm%3A4.1.3#optional!builtin<compat/typescript>::version=4.1.3&hash=4a8eb8"
+"typescript@patch:typescript@npm%3A^5.9.3#optional!builtin<compat/typescript>":
+  version: 5.9.3
+  resolution: "typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10c0/9d97bbc0673b596a6fffbb73a3e0175d20fd19babd05a945b3277314500136bb8cf409634d8a0b6f7d3d8d5c997b4e22bec7373a313a0d1f2a97e420ab4bc088
+  checksum: 10c0/ad09fdf7a756814dce65bc60c1657b40d44451346858eea230e10f2e95a289d9183b6e32e5c11e95acc0ccc214b4f36289dcad4bf1886b0adb84d711d336a430
   languageName: node
   linkType: hard
 
