@@ -69,7 +69,7 @@ jobs:
       - name: Install Dependencies
         run: yarn install --immutable
       - name: Install Electron
-        run: yarn add "electron@${{ matrix.electron-version }}" -P
+        run: yarn add -D "electron@${{ matrix.electron-version }}"
       - name: Build
         run: yarn tsc
       - name: Test (Electron 12)
