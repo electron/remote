@@ -5,13 +5,21 @@
     "lib": [
       "es2019",
       "esnext.weakref",
+      "es2021.intl",
       "dom",
       "dom.iterable"
     ],
     "module": "commonjs",
     "outDir": "./dist",
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "types": [
+      "node",
+      "mocha",
+      "chai",
+      "chai-as-promised",
+      "dirty-chai"
+    ]
   },
   "exclude": ["dist", "main", "renderer"]
 }
