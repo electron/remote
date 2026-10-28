@@ -42,7 +42,7 @@ __metadata:
     chai: "npm:^4.2.0"
     chai-as-promised: "npm:^7.1.1"
     dirty-chai: "npm:^2.0.1"
-    electron: "npm:42.x"
+    electron: "npm:45.x"
     mocha: "npm:^11.7.4"
     mocha-junit-reporter: "npm:^1.23.3"
     mocha-multi-reporters: "npm:^1.1.7"
@@ -549,9 +549,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron@npm:42.x":
-  version: 42.11.16
-  resolution: "electron@npm:42.11.16"
+"electron@npm:45.x":
+  version: 45.1.0
+  resolution: "electron@npm:45.1.0"
   dependencies:
     "@electron-internal/extract-zip": "npm:^1.0.1"
     "@electron/get": "npm:^5.0.0"
@@ -559,7 +559,7 @@ __metadata:
   bin:
     electron: cli.js
     install-electron: install.js
-  checksum: 10c0/461293d0115b223f86c04751edd95c956ee24b338b6216838e9dec4dd00e5de9da41d80176832b183872d9605b4dc09ea7dd4a4b09bdcd90b2337be1f43c0eeb
+  checksum: 10c0/ac5b2ee3eb40c20b989be2aab6f1201515440088c7cf418ff15baf6b3a3a53f4a09d560dc023c31233a107b8b3a34083d8c17a41a77a703db0c380d7008f33ca
   languageName: node
   linkType: hard
 
