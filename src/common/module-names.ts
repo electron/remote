@@ -33,6 +33,7 @@ export const browserModuleNames = [
   'screen',
   'session',
   'ServiceWorkerMain',
+  'sharedTexture',
   'ShareMenu',
   'systemPreferences',
   'TopLevelWindow',
