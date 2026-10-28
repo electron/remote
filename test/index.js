@@ -13,4 +13,8 @@ app.on('window-all-closed', () => null)
 
 app.whenReady().then(() => {
   require('mocha/bin/mocha')
+}).catch((err) => {
+  // Fail fast instead of leaving the app running until the CI job times out.
+  console.error(err)
+  app.exit(1)
 })
