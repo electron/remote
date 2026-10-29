@@ -55,6 +55,7 @@ jobs:
           - 44
           - 45
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -69,7 +70,7 @@ jobs:
       - name: Install Dependencies
         run: yarn install --immutable
       - name: Install Electron
-        run: yarn add "electron@${{ matrix.electron-version }}" -P
+        run: yarn add -D "electron@${{ matrix.electron-version }}"
       - name: Build
         run: yarn tsc
       - name: Test (Electron 12)
