@@ -30,14 +30,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20.x
+          node-version: 22.x
+          check-latest: true
           package-manager-cache: false
       - name: Install
         run: yarn install --immutable
       - name: Get GitHub app token
         id: secret-service
-        uses: electron/secret-service-action@3476425e8b30555aac15b1b7096938e254b0e155 # v1.0.0
+        uses: electron/secret-service-action@23b9042f797e34674f0fe2c91608f57f9661ccf2 # v1.1.0
       - name: Run semantic release
-        uses: electron/semantic-trusted-release@03517840010ba30fe5264f4875f4cff066b658d1 # v1.1.0
+        uses: electron/semantic-trusted-release@672a62fe17fce21a0d10de5a6825ee54817af317 # v1.1.2
         with:
           github-token: ${{ fromJSON(steps.secret-service.outputs.secrets).GITHUB_TOKEN }}
