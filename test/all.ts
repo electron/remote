@@ -83,6 +83,20 @@ function makeEachWindow () {
   return () => w
 }
 
+// Builds a single-representation image whose pixels are all distinct, so that
+// any change in dimensions or row stride shows up as a pixel mismatch.
+function makeScaledImage (scaleFactor: number) {
+  const width = 200
+  const height = 200
+  const buffer = Buffer.alloc(width * height * 4)
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      buffer.writeUInt32LE((0xff000000 | (x << 8) | y) >>> 0, (y * width + x) * 4)
+    }
+  }
+  return nativeImage.createFromBitmap(buffer, { width, height, scaleFactor })
+}
+
 describe('typeUtils serialization/deserialization', () => {
   it('serializes and deserializes an empty NativeImage', () => {
     const image = nativeImage.createEmpty()
@@ -144,6 +158,17 @@ describe('typeUtils serialization/deserialization', () => {
     expect(nonEmpty.toPNG({ scaleFactor: 2.0 })).to.not.be.empty()
     expect(nonEmpty.toDataURL()).to.not.be.empty()
   })
+
+  for (const scaleFactor of [1.5, 2.0]) {
+    it(`serializes and deserializes a NativeImage with a single representation at scale factor ${scaleFactor}`, () => {
+      const image = makeScaledImage(scaleFactor)
+      const deserialized = deserialize(serialize(image))
+
+      expect(deserialized.getScaleFactors()).to.deep.equal([scaleFactor])
+      expect(deserialized.getSize(scaleFactor)).to.deep.equal(image.getSize(scaleFactor))
+      expect(deserialized.toBitmap({ scaleFactor }).equals(image.toBitmap({ scaleFactor }))).to.be.true()
+    })
+  }
 
   it('serializes and deserializes an Array', () => {
     const array = [1, 2, 3, 4, 5]
@@ -414,6 +439,67 @@ describe('remote module', () => {
         return image.getSize()
       })).to.eventually.deep.equal({ width: 2, height: 2 })
     })
+
+    for (const scaleFactor of [1.5, 2.0]) {
+      it(`preserves a nativeImage at scale factor ${scaleFactor} from renderer to main`, async () => {
+        const expected = makeScaledImage(scaleFactor)
+        const checkImage = (img: NativeImage) => ({
+          scaleFactors: img.getScaleFactors(),
+          size: img.getSize(scaleFactor),
+          identical: img.toBitmap({ scaleFactor }).equals(expected.toBitmap({ scaleFactor }))
+        })
+
+        w().webContents.once('remote-get-global' as any, (event: any) => {
+          event.returnValue = checkImage
+        })
+
+        await expect(remotely((scaleFactor: number) => {
+          const { nativeImage } = require('electron')
+          const remote = require('./renderer')
+          const buffer = Buffer.alloc(200 * 200 * 4)
+          for (let y = 0; y < 200; y++) {
+            for (let x = 0; x < 200; x++) {
+              buffer.writeUInt32LE((0xff000000 | (x << 8) | y) >>> 0, (y * 200 + x) * 4)
+            }
+          }
+          const image = nativeImage.createFromBitmap(buffer, { width: 200, height: 200, scaleFactor })
+          return remote.getGlobal('someFunction')(image)
+        }, scaleFactor)).to.eventually.deep.equal({
+          scaleFactors: [scaleFactor],
+          size: expected.getSize(scaleFactor),
+          identical: true
+        })
+      })
+
+      it(`preserves a nativeImage at scale factor ${scaleFactor} from main to renderer`, async () => {
+        const expected = makeScaledImage(scaleFactor)
+
+        w().webContents.once('remote-get-global' as any, (event: any) => {
+          event.returnValue = makeScaledImage(scaleFactor)
+        })
+
+        await expect(remotely((scaleFactor: number) => {
+          const { nativeImage } = require('electron')
+          const image = require('./renderer').getGlobal('someFunction')
+          const buffer = Buffer.alloc(200 * 200 * 4)
+          for (let y = 0; y < 200; y++) {
+            for (let x = 0; x < 200; x++) {
+              buffer.writeUInt32LE((0xff000000 | (x << 8) | y) >>> 0, (y * 200 + x) * 4)
+            }
+          }
+          const original = nativeImage.createFromBitmap(buffer, { width: 200, height: 200, scaleFactor })
+          return {
+            scaleFactors: image.getScaleFactors(),
+            size: image.getSize(scaleFactor),
+            identical: image.toBitmap({ scaleFactor }).equals(original.toBitmap({ scaleFactor }))
+          }
+        }, scaleFactor)).to.eventually.deep.equal({
+          scaleFactors: [scaleFactor],
+          size: expected.getSize(scaleFactor),
+          identical: true
+        })
+      })
+    }
 
     it('can properly create a menu with an nativeImage icon in the renderer', async () => {
       await expect(remotely(() => {

@@ -44,7 +44,12 @@ function serializeNativeImage (image: Electron.NativeImage) {
   if (scaleFactors.length === 1) {
     const scaleFactor = scaleFactors[0];
     const size = image.getSize(scaleFactor);
-    const buffer = image.toBitmap({ scaleFactor });
+    // A raw bitmap is read back using `size`, which is in DIPs, so it only
+    // round-trips at scale factor 1. Otherwise send a PNG, which carries its
+    // own pixel dimensions.
+    const buffer = scaleFactor === 1
+      ? image.toBitmap({ scaleFactor })
+      : image.toPNG({ scaleFactor });
     representations.push({ scaleFactor, size, buffer });
   } else {
     // Construct from dataURLs to ensure that they are not lost in creation.
