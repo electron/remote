@@ -70,7 +70,7 @@ jobs:
       - name: Install Dependencies
         run: yarn install --immutable
       - name: Install Electron
-        run: yarn add -D "electron@${{ matrix.electron-version }}"
+        run: yarn add -D "electron@${{ matrix.electron-version }}" # zizmor: ignore[adhoc-packages]
       - name: Build
         run: yarn tsc
       - name: Test (Electron 12)
